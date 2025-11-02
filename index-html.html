@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>宋韵百茶戏</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background: #000;
+      min-height: 100vh;
+      overflow: hidden;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .app {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .image-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      padding: 0;
+    }
+
+    .fullscreen-image {
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      object-position: left center;
+      user-select: none;
+      -webkit-user-select: none;
+      display: block;
+    }
+
+    /* 箭头按钮 */
+    .arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 60px;
+      height: 60px;
+      background: rgba(0, 0, 0, 0.6);
+      border: none;
+      color: white;
+      font-size: 32px;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .arrow:active {
+      background: rgba(0, 0, 0, 0.8);
+      transform: translateY(-50%) scale(0.9);
+    }
+
+    .arrow-left {
+      left: 15px;
+    }
+
+    .arrow-right {
+      right: 15px;
+    }
+
+    .arrow.hidden {
+      display: none;
+    }
+
+    /* 指示器 */
+    .indicator {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      z-index: 100;
+    }
+
+    /* 手机端适配 */
+    @media (max-width: 768px) {
+      .arrow {
+        width: 50px;
+        height: 50px;
+        font-size: 28px;
+      }
+
+      .arrow-left {
+        left: 10px;
+      }
+
+      .arrow-right {
+        right: 10px;
+      }
+
+      .indicator {
+        font-size: 12px;
+        padding: 6px 12px;
+        bottom: 15px;
+      }
+    }
+
+    /* 所有图片统一从左边对齐，超出部分裁切 */
+    @media (orientation: landscape) {
+      .fullscreen-image {
+        width: 100vw;
+        height: 100vh;
+        object-fit: cover;
+        object-position: left center;
+      }
+    }
+
+    @media (orientation: portrait) {
+      .fullscreen-image {
+        width: 100vw;
+        height: 100vh;
+        object-fit: cover;
+        object-position: left center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- 图片容器 -->
+    <div class="image-container">
+      <img 
+        id="currentImage" 
+        class="fullscreen-image"
+        alt="宋韵百茶戏"
+      />
+    </div>
+
+    <!-- 左箭头 -->
+    <button 
+      id="leftArrow"
+      class="arrow arrow-left" 
+    >
+      ←
+    </button>
+
+    <!-- 右箭头 -->
+    <button 
+      id="rightArrow"
+      class="arrow arrow-right" 
+    >
+      →
+    </button>
+
+    <!-- 图片指示器 -->
+    <div class="indicator">
+      <span id="indicatorText">1 / 10</span>
+    </div>
+  </div>
+
+  <script>
+    // 图片列表（按顺序）- 使用相对路径
+    const images = [
+      'public/photos/start.png',
+      'public/photos/1zhicha.png',
+      'public/photos/2suicha.png',
+      'public/photos/3niancha.png',
+      'public/photos/4mocha.png',
+      'public/photos/5luocha.png',
+      'public/photos/6houtang.png',
+      'public/photos/7tangzhan.png',
+      'public/photos/8diancha.png',
+      'public/photos/end.png'
+    ];
+
+    // 图片名称
+    const imageNames = [
+      '开始',
+      '炙茶',
+      '碎茶',
+      '碾茶',
+      '磨茶',
+      '罗茶',
+      '候汤',
+      '汤盏',
+      '点茶',
+      '结束'
+    ];
+
+    let currentIndex = 0;
+    const currentImageEl = document.getElementById('currentImage');
+    const leftArrowEl = document.getElementById('leftArrow');
+    const rightArrowEl = document.getElementById('rightArrow');
+    const indicatorTextEl = document.getElementById('indicatorText');
+
+    // 获取图片名称
+    function getImageName(index) {
+      return imageNames[index] || `图片${index + 1}`;
+    }
+
+    // 更新图片显示
+    function updateImage() {
+      currentImageEl.src = images[currentIndex];
+      currentImageEl.alt = getImageName(currentIndex);
+      indicatorTextEl.textContent = `${currentIndex + 1} / ${images.length}`;
+      
+      // 更新箭头显示
+      if (currentIndex === 0) {
+        leftArrowEl.classList.add('hidden');
+      } else {
+        leftArrowEl.classList.remove('hidden');
+      }
+
+      if (currentIndex === images.length - 1) {
+        rightArrowEl.classList.add('hidden');
+      } else {
+        rightArrowEl.classList.remove('hidden');
+      }
+    }
+
+    // 上一张
+    function prevImage() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        updateImage();
+      }
+    }
+
+    // 下一张
+    function nextImage() {
+      if (currentIndex < images.length - 1) {
+        currentIndex++;
+        updateImage();
+      }
+    }
+
+    // 绑定事件
+    leftArrowEl.addEventListener('click', prevImage);
+    rightArrowEl.addEventListener('click', nextImage);
+
+    // 键盘支持
+    function handleKeyPress(e) {
+      if (e.key === 'ArrowLeft') {
+        prevImage();
+      } else if (e.key === 'ArrowRight') {
+        nextImage();
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress);
+
+    // 初始化显示第一张图片
+    updateImage();
+  </script>
+</body>
+</html>
+
