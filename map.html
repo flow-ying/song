@@ -6,34 +6,56 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 	<title>移动端地图</title>
 	<style>
-		/* 初始化：手机端彻底清除所有内外边距+滚动条，全屏纯黑背景 */
+		/* 初始化：清除内外边距 */
 		* { margin: 0; padding: 0; box-sizing: border-box; }
 		html, body {
 			width: 100%;
 			height: 100%;
 			margin: 0;
 			padding: 0;
-			background: #000;
-			overflow: hidden; /* 禁止页面滚动，彻底防溢出 */
-			touch-action: none; /* 禁止手机双指缩放，避免错位 */
+			background: #fff;
+			overflow: auto;
+			font-family: "PingFang SC", "Helvetica Neue", Arial, sans-serif;
 		}
-		/* 舞台容器：手机端绝对全屏，居中兜底，无任何留白 */
+
+		/* 电脑端居中容器 */
+		.desktop-wrapper {
+			width: 100%;
+			height: 100%;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			background-color: #000;
+		}
+
+		/* 移动端窗口容器 */
+		.mobile-container {
+			position: relative;
+			width: 100%;
+			height: 100%;
+			max-width: 400px;
+			max-height: 800px;
+			margin: 0 auto;
+			overflow: hidden;
+			box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+		}
+
+		/* 舞台容器 */
 		#stage {
-			position: fixed;
-			left: 0;
-			top: 0;
-			width: 100vw;
-			height: 100vh;
+			position: relative;
+			width: 100%;
+			height: 100%;
 			display: flex;
 			align-items: center;
 			justify-content: center;
 			overflow: hidden;
+			background: #000;
 		}
 		/* 地图容器：支持水平滑动 */
 		#map-container {
 			position: relative;
-			width: 100vw;
-			height: 100vh;
+			width: 100%;
+			height: 100%;
 			overflow: hidden;
 			cursor: grab;
 		}
@@ -126,10 +148,49 @@
 			text-align: center;
 			white-space: nowrap;
 		}
+
+		/* 电脑端优化 */
+		@media (min-width: 768px) {
+			.mobile-container {
+				width: 400px;
+				height: 800px;
+				border-radius: 20px;
+				overflow: hidden;
+			}
+		}
+
+		/* 平板端优化 */
+		@media (min-width: 481px) and (max-width: 767px) {
+			.mobile-container {
+				max-width: 90vw;
+				max-height: 90vh;
+				margin: 5vh auto;
+			}
+		}
+
+		/* 小屏幕手机优化 */
+		@media (max-width: 480px) {
+			.mobile-container {
+				max-width: 100%;
+				max-height: 100%;
+				border-radius: 0;
+				box-shadow: none;
+			}
+		}
+
+		/* 横屏模式优化 */
+		@media (max-height: 500px) and (orientation: landscape) {
+			.mobile-container {
+				max-width: 80vh;
+				max-height: 80vw;
+			}
+		}
 	</style>
 </head>
 <body>
-	<div id="stage">
+	<div class="desktop-wrapper">
+		<div class="mobile-container">
+			<div id="stage">
 		<div id="map-container">
 			<img id="map-img" src="./picture/map/map.gif" alt="地图" />
 			<!-- 地图上的图片元素 -->
@@ -144,6 +205,7 @@
 			</div>
 			<div id="map-text">
 				屏幕滑动，点击按键触发互动
+			</div>
 			</div>
 		</div>
 	</div>
@@ -195,6 +257,8 @@
 			}
 
 			calculateBounds() {
+				const stageElement = document.getElementById('stage');
+				const stageRect = stageElement.getBoundingClientRect();
 				const containerRect = this.mapContainer.getBoundingClientRect();
 				const imgNaturalWidth = this.mapImg.naturalWidth;
 				const imgNaturalHeight = this.mapImg.naturalHeight;
@@ -202,8 +266,8 @@
 				// 计算宽高比
 				const aspectRatio = imgNaturalWidth / imgNaturalHeight;
 
-				// 高度始终等于屏幕高度
-				const displayHeight = containerRect.height;
+				// 高度始终等于舞台高度
+				const displayHeight = stageRect.height;
 
 				// 宽度按比例计算
 				let displayWidth = displayHeight * aspectRatio;
@@ -225,7 +289,7 @@
 
 				// 计算滑动边界：地图可以滑动的范围
 				const imgRect = this.mapImg.getBoundingClientRect();
-				this.minX = -(imgRect.width - containerRect.width); // 允许向左滑动到最右边
+				this.minX = -(imgRect.width - stageRect.width); // 允许向左滑动到最右边
 				this.maxX = 0; // 最右边界为0（贴合屏幕左侧）
 
 				// 初始位置设为0，最左侧和屏幕左侧贴合
@@ -245,6 +309,8 @@
 			}
 
 			positionMapElements() {
+				const stageElement = document.getElementById('stage');
+				const stageRect = stageElement.getBoundingClientRect();
 				const containerRect = this.mapContainer.getBoundingClientRect();
 				const imgRect = this.mapImg.getBoundingClientRect();
 				const imgNaturalWidth = this.mapImg.naturalWidth;
@@ -261,20 +327,20 @@
 				const element3Img = this.mapElement3.querySelector('img');
 
 				// === 地图元素1（5.gif）的大小设置 - 基于地图显示尺寸 ===
-				const element1Width = imgRect.width * 0.2;  // 地图宽度的90%
-				const element1Height = imgRect.height * 0.2; // 地图高度的90%
+				const element1Width = imgRect.width * 0.2;  // 地图宽度的20%
+				const element1Height = imgRect.height * 0.2; // 地图高度的20%
 				element1Img.style.width = element1Width + 'px';
 				element1Img.style.height = element1Height + 'px';
 
 				// === 地图元素2（6.gif）的大小设置 - 基于地图显示尺寸 ===
-				const element2Width = imgRect.width * 0.2;  // 地图宽度的90%
-				const element2Height = imgRect.height * 0.2; // 地图高度的90%
+				const element2Width = imgRect.width * 0.2;  // 地图宽度的20%
+				const element2Height = imgRect.height * 0.2; // 地图高度的20%
 				element2Img.style.width = element2Width + 'px';
 				element2Img.style.height = element2Height + 'px';
 
 				// === 地图元素3（7.gif）的大小设置 - 与5.gif类似 ===
-				const element3Width = imgRect.width * 0.03;  // 地图宽度的90%
-				const element3Height = imgRect.height * 0.06; // 地图高度的90%
+				const element3Width = imgRect.width * 0.03;  // 地图宽度的3%
+				const element3Height = imgRect.height * 0.06; // 地图高度的6%
 				element3Img.style.width = element3Width + 'px';
 				element3Img.style.height = element3Height + 'px';
 
