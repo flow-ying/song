@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>opening</title>
+  <title>loading</title>
   <style>
     * {
       margin: 0;
@@ -45,7 +45,6 @@
       margin: 0 auto;
       overflow: hidden;
       box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
-      /* 添加轻微阴影增强视觉效果 */
     }
 
     /* 修改原 container 样式 */
@@ -53,23 +52,14 @@
       position: relative;
       width: 100%;
       height: 100%;
-      background-image: url('./picture/1/2.gif');
+      background-image: url('./picture/2/1.gif');
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
-      cursor: pointer;
-    }
-
-    .overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-image: url('./picture/1/1.gif');
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
     }
 
     .music-btn {
@@ -81,41 +71,82 @@
       height: auto;
       max-width: 50px;
       max-height: 50px;
+      cursor: pointer;
       z-index: 10;
-      /* 提高层级 */
     }
 
     .music-btn img {
       width: 100%;
       height: auto;
       display: block;
-      cursor: pointer;
     }
 
-    .start-text {
+    .content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 80%;
+      max-width: 500px;
+      margin-top: -10%;
+    }
+
+    .image-container {
+      width: 75%;
+      height: auto;
+      margin-bottom: 8%;
+    }
+
+    .image-container img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .progress-container {
+      width: 60.6%;
+      height: auto;
+      position: relative;
+      margin-bottom: 5%;
+    }
+
+    .progress-empty {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .progress-full-container {
       position: absolute;
-      bottom: 9%;
-      left: 50%;
-      transform: translateX(-50%);
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .progress-full {
+      width: 0%;
+      height: 100%;
+      overflow: hidden;
+      transition: width 0.3s ease;
+    }
+
+    .progress-full img {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .loading-text {
       color: #fff;
-      font-size: 6vw;
-      font-weight: bold;
+      font-size: 5vw;
       text-align: center;
-      white-space: nowrap;
-      background: transparent;
-      text-shadow: none;
-      border: none;
-      padding: 0;
-      z-index: 10;
-      /* 提高层级 */
-      pointer-events: none;
-      /* 防止文字干扰点击 */
     }
 
     /* 媒体查询优化 */
     @media (min-width: 768px) {
-      .start-text {
-        font-size: 30px;
+      .loading-text {
+        font-size: 24px;
       }
 
       /* 电脑端：显示移动端尺寸窗口 */
@@ -123,14 +154,18 @@
         width: 400px;
         height: 800px;
         border-radius: 20px;
-        /* 圆角效果 */
         overflow: hidden;
+      }
+
+      /* 调整字体大小使用固定值 */
+      .loading-text {
+        font-size: 20px;
       }
     }
 
     @media (max-width: 320px) {
-      .start-text {
-        font-size: 14px;
+      .loading-text {
+        font-size: 16px;
       }
     }
 
@@ -146,25 +181,44 @@
         border-radius: 0;
         box-shadow: none;
       }
+
+      .loading-text {
+        font-size: 5vw;
+      }
     }
   </style>
 </head>
 
 <body>
-  <!-- 新增外层容器 -->
   <!-- 背景音乐 -->
   <audio id="bg-music" loop preload="auto">
     <source src="./music.mp3" type="audio/mpeg">
   </audio>
 
+  <!-- 新增外层容器 -->
   <div class="desktop-wrapper">
     <div class="mobile-container">
-      <div class="container" id="mainContainer">
-        <div class="overlay"></div>
+      <div class="container">
         <div class="music-btn" id="musicButton">
           <img src="./picture/button/music.gif" alt="音乐按钮" id="musicIcon">
         </div>
-        <div class="start-text">点击开始探索</div>
+
+        <div class="content">
+          <div class="image-container">
+            <img src="./picture/2/2.gif" alt="内容图片">
+          </div>
+
+          <div class="progress-container">
+            <img src="./picture/2/3.gif" alt="空进度条" class="progress-empty">
+            <div class="progress-full-container">
+              <div class="progress-full" id="progressFull">
+                <img src="./picture/2/4.gif" alt="满进度条">
+              </div>
+            </div>
+          </div>
+
+          <div class="loading-text">loading...</div>
+        </div>
       </div>
     </div>
   </div>
@@ -199,9 +253,7 @@
     });
 
     // 音乐按钮切换功能
-    document.getElementById('musicButton').addEventListener('click', function (event) {
-      event.stopPropagation();
-
+    document.getElementById('musicButton').addEventListener('click', function () {
       const isPlaying = !bgMusic.paused;
 
       if (isPlaying) {
@@ -219,15 +271,26 @@
       }
     });
 
-    // 添加页面点击跳转功能
-    document.getElementById('mainContainer').addEventListener('click', function () {
-      // 跳转前保存音乐状态
-      const isPlaying = !bgMusic.paused;
-      localStorage.setItem('musicPlaying', isPlaying ? 'true' : 'false');
-      localStorage.setItem('musicCurrentTime', bgMusic.currentTime.toFixed(3));
+    // 模拟加载进度
+    let progress = 0;
+    const progressFull = document.getElementById('progressFull');
+    const loadingInterval = setInterval(() => {
+      progress += Math.random() * 10;
+      if (progress >= 100) {
+        progress = 100;
+        clearInterval(loadingInterval);
+        // 加载完成后跳转到3.html
+        setTimeout(() => {
+          // 跳转前保存音乐状态
+          const isPlaying = !bgMusic.paused;
+          localStorage.setItem('musicPlaying', isPlaying ? 'true' : 'false');
+          localStorage.setItem('musicCurrentTime', bgMusic.currentTime.toFixed(3));
 
-      window.location.href = '2.html';
-    });
+          window.location.href = '3.html';
+        }, 500); // 延迟500毫秒，让用户看到100%的进度条
+      }
+      progressFull.style.width = progress + '%';
+    }, 300);
   </script>
 </body>
 

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宋韵茶戏 妙笔生花</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: transparent;
+            overflow: hidden;
+        }
+        .container {
+            position: relative;
+            width: 100vw;
+            height: 157.5vw;
+            max-width: 640px;
+            max-height: 1008px;
+            background-size: 100% 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        /* 背景 */
+        .background {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: url('images3/素材/3.gif');
+            background-size: 100% 100%;
+            z-index: 1;
+        }
+        /* 标题 */
+        .title-section {
+            position: absolute;
+            top: -25%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            z-index: 5;
+            animation: fadeIn 1.5s ease-out;
+        }
+        .main-title {
+            background-image: url('images3/素材/2.3.gif');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 100%;
+            height: 234.375vw;
+            max-height: 1500px;
+        }
+        /* 山水画 */
+        .mountain {
+            position: absolute;
+            left: -1%;
+            top: -8%;
+            width: 180%;
+            z-index: 3;
+            animation: fadeIn 2s ease-out 0.5s both;
+        }
+        .mountain-bg {
+            background-image: url('images3/素材/5.gif');
+            background-size: contain;
+            background-repeat: no-repeat;
+            width: 100%;
+            height: 187.5vw;
+            max-height: 1200px;
+        }
+        /* 印章 */
+        .seal {
+            position: absolute;
+            right: 0.0001%;
+            top: 0.1%;
+            width: 93.75vw;
+            max-width: 600px;
+            z-index: 6;
+            animation: fadeIn 1s ease-out 1.5s both;
+        }
+        .seal-bg {
+            background-image: url('images3/素材/7.gif');
+            background-size: contain;
+            background-repeat: no-repeat;
+            width: 100%;
+            height: 187.5vw;
+            max-height: 1200px;
+        }
+        /* 茶碗容器 */
+        .tea-bowl-container {
+            position: absolute;
+            left: 50%;
+            top: 49%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            z-index: 4;
+            overflow: visible;
+        }
+        /* 蒸汽容器 - 修改位置和尺寸 */
+        .steam-container {
+            position: absolute;
+            width: 100%; /* 从70%增加到100% */
+            height: 80vw; /* 从60vw增加到80vw */
+            max-height: 512px; /* 从384px增加到512px */
+            top: 10vw;
+            left: 48%; /* 改回50%居中 */
+            transform: translateX(-50%);
+            overflow: visible;
+            z-index: 100;
+            pointer-events: none;
+        }
+        /* 蒸汽元素 - 大幅增大尺寸 */
+        .steam {
+            position: absolute;
+            width: 70vw; /* 从50vw增加到70vw */
+            height: 70vw; /* 从50vw增加到70vw */
+            max-width: 448px; /* 从320px增加到448px */
+            max-height: 448px; /* 从320px增加到448px */
+            background-image: url('images3/素材/6.gif');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0;
+            z-index: 101;
+        }
+        .steam1 {
+            left: -5%; /* 调整位置 */
+            animation: steam-rise 5s ease-in-out infinite;
+        }
+        .steam2 {
+            left: 17.5%; /* 调整位置 */
+            animation: steam-rise 5s ease-in-out 1.5s infinite;
+        }
+        .steam3 {
+            left: 40%; /* 调整位置 */
+            animation: steam-rise 5s ease-in-out 3s infinite;
+        }
+        /* 蒸汽上升动画 - 优化缩放比例 */
+        @keyframes steam-rise {
+            0% {
+                bottom: -5vw;
+                opacity: 0;
+                transform: translateX(0) scale(0.8); /* 起始缩放增大 */
+            }
+            10% {
+                opacity: 0.85;
+            }
+            30% {
+                opacity: 0.95;
+            }
+            60% {
+                opacity: 0.65;
+                transform: translateX(5px) scale(1.2); /* 中间缩放增大 */
+            }
+            100% {
+                bottom: 50vw; /* 增加上升距离 */
+                opacity: 0;
+                transform: translateX(-5px) scale(1.8); /* 最终缩放大幅增大 */
+            }
+        }
+        /* 茶碗 */
+        .tea-bowl {
+            position: relative;
+            animation: fadeIn 1.5s ease-out 1s both;
+            z-index: 2;
+        }
+        .tea-bowl-bg {
+            background-image: url('images3/素材/1.1.gif');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 100%;
+            height: 203.125vw;
+            max-height: 1300px;
+        }
+        /* 底部按钮 - 位置上移 */
+        .buttons {
+            position: absolute;
+            bottom: 10%; /* 从7%增加到8% */
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10vw; /* 从8vw增加到10vw */
+            z-index: 200;
+            animation: fadeIn 1.5s ease-out 2s both;
+        }
+        /* 按钮样式 - 进一步增大尺寸 */
+        .btn {
+            width: 35vw; /* 从25vw增加到35vw */
+            height: 10.5vw; /* 从7.5vw增加到10.5vw */
+            max-width: 224px; /* 从160px增加到224px */
+            max-height: 67px; /* 从48px增加到67px */
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            transform: scale(1);
+        }
+        .btn:hover {
+            transform: scale(1.15);
+        }
+        .btn:active {
+            transform: scale(1.05);
+        }
+        .btn-exit {
+            background-image: url('屏幕截图%202025-12-22%20202144.png');
+        }
+        .btn-share {
+            background-image: url('屏幕截图%202025-12-22%20202154.png');
+        }
+        /* 统一淡入动画 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        /* 响应式 */
+        @media (min-aspect-ratio: 640/1008) {
+            .container {
+                width: 63.49206vh;
+                height: 100vh;
+            }
+            .main-title {
+                height: 148.809522vh;
+            }
+            .mountain-bg {
+                height: 119.047618vh;
+            }
+            .seal {
+                width: 59.523808vh;
+            }
+            .seal-bg {
+                height: 119.047618vh;
+            }
+            .steam-container {
+                height: 50.79365vh; /* 从38.095238vh增加 */
+                top: 35vh;
+                z-index: 100;
+                overflow: visible;
+                width: 100%;
+            }
+            .steam {
+                width: 44.444444vh; /* 从31.746032vh大幅增加到44.444444vh */
+                height: 44.444444vh; /* 从31.746032vh大幅增加到44.444444vh */
+                z-index: 101;
+            }
+            @keyframes steam-rise {
+                0% {
+                    bottom: -3.174603vh;
+                    opacity: 0;
+                    transform: translateX(0) scale(0.8);
+                }
+                10% {
+                    opacity: 0.85;
+                }
+                30% {
+                    opacity: 0.95;
+                }
+                60% {
+                    opacity: 0.65;
+                    transform: translateX(5px) scale(1.2);
+                }
+                100% {
+                    bottom: 31.746032vh; /* 增加上升距离 */
+                    opacity: 0;
+                    transform: translateX(-5px) scale(1.8);
+                }
+            }
+            .tea-bowl-bg {
+                height: 128.968253vh;
+            }
+            .buttons {
+                bottom: 10%; /* 从原来的位置上移 */
+                gap: 6.35vh; /* 从5.08vh增加到6.35vh */
+            }
+            .btn {
+                width: 22.22vh; /* 从15.873016vh增加到22.22vh */
+                height: 6.67vh; /* 从4.761905vh增加到6.67vh */
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景音乐 -->
+    <audio id="bg-music" loop preload="auto">
+        <source src="../music.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="container">
+        <!-- 背景 -->
+        <div class="background"></div>
+        
+        <!-- 标题 -->
+        <div class="title-section">
+            <div class="main-title"></div>
+        </div>
+        
+        <!-- 山水画 -->
+        <div class="mountain">
+            <div class="mountain-bg"></div>
+        </div>
+        
+        <!-- 印章 -->
+        <div class="seal">
+            <div class="seal-bg"></div>
+        </div>
+        
+        <!-- 茶碗与蒸汽 -->
+        <div class="tea-bowl-container">
+            <!-- 蒸汽效果 - 必须在茶碗之前 -->
+            <div class="steam-container">
+                <div class="steam steam1"></div>
+                <div class="steam steam2"></div>
+                <div class="steam steam3"></div>
+            </div>
+            
+            <!-- 茶碗 -->
+            <div class="tea-bowl">
+                <div class="tea-bowl-bg"></div>
+            </div>
+        </div>
+        
+        <!-- 底部按钮 -->
+        <div class="buttons">
+            <div class="btn btn-exit" onclick="exitGame()"></div>
+            <div class="btn btn-share" onclick="sharePoster()"></div>
+        </div>
+    </div>
+    
+    <script>
+        // 获取音频元素
+        const bgMusic = document.getElementById('bg-music');
+
+        // 页面加载时恢复音乐状态
+        window.addEventListener('load', function() {
+            const savedMusicState = localStorage.getItem('musicPlaying');
+            const savedMusicTime = localStorage.getItem('musicCurrentTime');
+
+            if (savedMusicState === 'true') {
+                // 延迟播放以确保音频元素已准备好
+                setTimeout(() => {
+                    if (savedMusicTime) {
+                        const time = parseFloat(savedMusicTime);
+                        if (!isNaN(time) && time >= 0) {
+                            bgMusic.currentTime = time;
+                        }
+                    }
+                    bgMusic.play().catch(function(error) {
+                        console.log('Audio play failed:', error);
+                    });
+                }, 100);
+            }
+
+            // 调试：检查图片是否加载成功
+            console.log('页面加载完成');
+            const steams = document.querySelectorAll('.steam');
+            console.log('蒸汽元素数量:', steams.length);
+            steams.forEach((steam, index) => {
+                console.log(`蒸汽${index + 1}位置:`, steam.getBoundingClientRect());
+            });
+        });
+
+        function exitGame() {
+            if(confirm('确定要退出游戏吗？')) {
+                // 退出前保存音乐状态
+                const isPlaying = !bgMusic.paused;
+                localStorage.setItem('musicPlaying', isPlaying ? 'true' : 'false');
+                localStorage.setItem('musicCurrentTime', bgMusic.currentTime.toFixed(3));
+
+                window.location.href = '../茶百戏/cbx2.html';
+            }
+        }
+        function sharePoster() {
+            // 创建下载链接
+            const link = document.createElement('a');
+            link.href = 'images3/分享页样式/3.png';
+            link.download = '宋韵茶戏海报.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>

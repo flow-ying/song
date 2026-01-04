@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="zh">
+<head>
+	<meta charset="utf-8" />
+	<!-- ★★★ 手机端核心适配：完美视口配置，解决所有手机适配问题，重中之重 ★★★ -->
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+	<title>移动端地图</title>
+	<style>
+		/* 初始化：手机端彻底清除所有内外边距+滚动条，全屏纯黑背景 */
+		* { margin: 0; padding: 0; box-sizing: border-box; }
+		html, body {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			background: #000;
+			overflow: hidden; /* 禁止页面滚动，彻底防溢出 */
+			touch-action: none; /* 禁止手机双指缩放，避免错位 */
+		}
+		/* 舞台容器：手机端绝对全屏，居中兜底，无任何留白 */
+		#stage {
+			position: fixed;
+			left: 0;
+			top: 0;
+			width: 100vw;
+			height: 100vh;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			overflow: hidden;
+		}
+		/* 地图容器：支持水平滑动 */
+		#map-container {
+			position: relative;
+			width: 100vw;
+			height: 100vh;
+			overflow: hidden;
+			cursor: grab;
+		}
+		#map-container:active {
+			cursor: grabbing;
+		}
+		/* 地图图片：支持滑动 */
+		#map-img {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: auto;
+			height: auto;
+			max-width: none;
+			max-height: none;
+			pointer-events: none;
+			transition: none; /* 禁用过渡动画，由JS控制 */
+		}
+		/* 地图上的图片元素：参照zhicha.html的第三张动图 */
+		#map-element-1, #map-element-2, #map-element-3 {
+			position: absolute;
+			z-index: 1005; /* 高于地图 */
+			pointer-events: none;
+		}
+		/* 地图元素支持点击 */
+		#map-element-1, #map-element-2 {
+			pointer-events: auto;
+			cursor: pointer;
+			animation: float 3s ease-in-out infinite;
+		}
+
+		/* 第3个地图元素和文字一起浮动 */
+		#map-element-3, #map-text {
+			animation: float-slow 4s ease-in-out infinite;
+		}
+
+		/* 快速浮动动画（前两个元素） */
+		@keyframes float {
+			0%, 100% {
+				transform: translateY(0px);
+			}
+			50% {
+				transform: translateY(-10px);
+			}
+		}
+
+		/* 慢速浮动动画（第3个元素和文字） */
+		@keyframes float-slow {
+			0%, 100% {
+				transform: translateY(0px);
+			}
+			50% {
+				transform: translateY(-8px);
+			}
+		}
+		#map-element-1 img, #map-element-2 img {
+			display: block;
+			object-fit: contain;
+		}
+
+		/* 页面切换遮罩 */
+		#page-transition {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100vw;
+			height: 100vh;
+			background: #000;
+			opacity: 0;
+			z-index: 9999;
+			pointer-events: none;
+		}
+		#page-transition.fade-out {
+			opacity: 1;
+			animation: fadeOut 1.5s ease forwards;
+			pointer-events: auto;
+		}
+		@keyframes fadeOut {
+			from { opacity: 0; }
+			to { opacity: 1; }
+		}
+
+		/* 地图文本 */
+		#map-text {
+			position: absolute;
+			z-index: 1005; /* 与地图元素相同 */
+			pointer-events: none;
+			font-family: "方正楷体_GBK", serif;
+			color: #666; /* 调暗的灰色 */
+			text-align: center;
+			white-space: nowrap;
+		}
+	</style>
+</head>
+<body>
+	<div id="stage">
+		<div id="map-container">
+			<img id="map-img" src="./picture/map/map.gif" alt="地图" />
+			<!-- 地图上的图片元素 -->
+			<div id="map-element-1">
+				<img src="./picture/map/5.gif" alt="" />
+			</div>
+			<div id="map-element-2">
+				<img src="./picture/map/6.gif" alt="" />
+			</div>
+			<div id="map-element-3">
+				<img src="./picture/map/7.gif" alt="" />
+			</div>
+			<div id="map-text">
+				屏幕滑动，点击按键触发互动
+			</div>
+		</div>
+	</div>
+
+	<!-- 页面切换遮罩 -->
+	<div id="page-transition"></div>
+
+	<script>
+		// 地图滑动控制
+		class MapController {
+			constructor() {
+				this.mapContainer = document.getElementById('map-container');
+				this.mapImg = document.getElementById('map-img');
+				this.mapElement1 = document.getElementById('map-element-1');
+				this.mapElement2 = document.getElementById('map-element-2');
+				this.mapElement3 = document.getElementById('map-element-3');
+				this.mapText = document.getElementById('map-text');
+				this.isDragging = false;
+				this.startX = 0;
+				this.startY = 0;
+				this.currentX = 0;
+				this.velocity = 0;
+				this.lastMoveTime = 0;
+				this.animationId = null;
+
+				// 地图边界限制
+				this.minX = 0;
+				this.maxX = 0;
+
+				this.init();
+			}
+
+			init() {
+				// 等待图片加载完成后再初始化
+				this.mapImg.onload = () => {
+					this.calculateBounds();
+					this.restoreMapPosition(); // 恢复保存的地图位置
+					this.positionMapElements();
+					this.bindEvents();
+				};
+
+				// 如果图片已经加载完成
+				if (this.mapImg.complete) {
+					this.calculateBounds();
+					this.restoreMapPosition(); // 恢复保存的地图位置
+					this.positionMapElements();
+					this.bindEvents();
+				}
+			}
+
+			calculateBounds() {
+				const containerRect = this.mapContainer.getBoundingClientRect();
+				const imgNaturalWidth = this.mapImg.naturalWidth;
+				const imgNaturalHeight = this.mapImg.naturalHeight;
+
+				// 计算宽高比
+				const aspectRatio = imgNaturalWidth / imgNaturalHeight;
+
+				// 高度始终等于屏幕高度
+				const displayHeight = containerRect.height;
+
+				// 宽度按比例计算
+				let displayWidth = displayHeight * aspectRatio;
+
+				// 如果计算出的宽度小于屏幕宽度，需要放大以确保可滑动
+				if (displayWidth < containerRect.width) {
+					displayWidth = containerRect.width;
+					// 相应调整高度以保持比例
+					const newHeight = displayWidth / aspectRatio;
+					if (newHeight > containerRect.height) {
+						// 如果新高度超过屏幕高度，以屏幕高度为准
+						displayWidth = containerRect.height * aspectRatio;
+					}
+				}
+
+				// 设置地图尺寸
+				this.mapImg.style.width = displayWidth + 'px';
+				this.mapImg.style.height = displayHeight + 'px';
+
+				// 计算滑动边界：地图可以滑动的范围
+				const imgRect = this.mapImg.getBoundingClientRect();
+				this.minX = -(imgRect.width - containerRect.width); // 允许向左滑动到最右边
+				this.maxX = 0; // 最右边界为0（贴合屏幕左侧）
+
+				// 初始位置设为0，最左侧和屏幕左侧贴合
+				this.mapImg.style.left = '0px';
+				this.mapImg.style.transform = 'none';
+			}
+
+			restoreMapPosition() {
+				// 恢复保存的地图位置
+				const savedPosition = localStorage.getItem('mapPosition');
+				if (savedPosition !== null) {
+					const position = parseFloat(savedPosition);
+					// 确保位置在有效范围内
+					const validPosition = Math.max(this.minX, Math.min(this.maxX, position));
+					this.mapImg.style.left = validPosition + 'px';
+				}
+			}
+
+			positionMapElements() {
+				const containerRect = this.mapContainer.getBoundingClientRect();
+				const imgRect = this.mapImg.getBoundingClientRect();
+				const imgNaturalWidth = this.mapImg.naturalWidth;
+				const imgNaturalHeight = this.mapImg.naturalHeight;
+
+				// 计算背景图的缩放比例
+				const scaleX = imgRect.width / imgNaturalWidth;
+				const scaleY = imgRect.height / imgNaturalHeight;
+				const scale = Math.min(scaleX, scaleY); // 使用最小缩放比例
+
+				// 获取地图元素
+				const element1Img = this.mapElement1.querySelector('img');
+				const element2Img = this.mapElement2.querySelector('img');
+				const element3Img = this.mapElement3.querySelector('img');
+
+				// === 地图元素1（5.gif）的大小设置 - 基于地图显示尺寸 ===
+				const element1Width = imgRect.width * 0.2;  // 地图宽度的90%
+				const element1Height = imgRect.height * 0.2; // 地图高度的90%
+				element1Img.style.width = element1Width + 'px';
+				element1Img.style.height = element1Height + 'px';
+
+				// === 地图元素2（6.gif）的大小设置 - 基于地图显示尺寸 ===
+				const element2Width = imgRect.width * 0.2;  // 地图宽度的90%
+				const element2Height = imgRect.height * 0.2; // 地图高度的90%
+				element2Img.style.width = element2Width + 'px';
+				element2Img.style.height = element2Height + 'px';
+
+				// === 地图元素3（7.gif）的大小设置 - 与5.gif类似 ===
+				const element3Width = imgRect.width * 0.03;  // 地图宽度的90%
+				const element3Height = imgRect.height * 0.06; // 地图高度的90%
+				element3Img.style.width = element3Width + 'px';
+				element3Img.style.height = element3Height + 'px';
+
+				// === 地图文本的大小设置 - 参照7.gif ===
+				const textWidth = imgRect.width * 0.3;  // 地图宽度的30%
+				const textHeight = imgRect.height * 0.05; // 地图高度的5%
+				const textFontSize = imgRect.width * 0.02; // 字体大小基于地图宽度
+				this.mapText.style.width = textWidth + 'px';
+				this.mapText.style.height = textHeight + 'px';
+				this.mapText.style.fontSize = textFontSize + 'px';
+
+				// === 地图元素1在背景图原始尺寸中的位置 - 可调整的初始位置 ===
+				const element1PosXOriginal = 1205; // 在原始背景图中的X坐标（像素）
+				const element1PosYOriginal = 515; // 在原始背景图中的Y坐标（像素）
+
+				// === 地图元素2在背景图原始尺寸中的位置 - 可调整的初始位置 ===
+				const element2PosXOriginal = 700; // 在原始背景图中的X坐标（像素）
+				const element2PosYOriginal = 515; // 在原始背景图中的Y坐标（像素）
+
+				// === 地图元素3在背景图原始尺寸中的位置 - 可调整的初始位置 ===
+				const element3PosXOriginal = 110; // 在原始背景图中的X坐标（像素）
+				const element3PosYOriginal = 980; // 在原始背景图中的Y坐标（像素）
+
+				// === 地图文本在背景图原始尺寸中的位置 - 参照7.gif ===
+				const textPosXOriginal = 380; // 在原始背景图中的X坐标（像素）
+				const textPosYOriginal = 985; // 在原始背景图中的Y坐标（像素）
+
+				// 根据缩放比例计算实际显示位置
+				const element1PosXDisplay = element1PosXOriginal * scale;
+				const element1PosYDisplay = element1PosYOriginal * scale;
+
+				const element2PosXDisplay = element2PosXOriginal * scale;
+				const element2PosYDisplay = element2PosYOriginal * scale;
+
+				const element3PosXDisplay = element3PosXOriginal * scale;
+				const element3PosYDisplay = element3PosYOriginal * scale;
+
+				const textPosXDisplay = textPosXOriginal * scale;
+				const textPosYDisplay = textPosYOriginal * scale;
+
+				// 计算相对于地图容器的位置（地图左上角为基准点，加上地图的偏移）
+				const mapLeft = parseFloat(this.mapImg.style.left) || 0;
+				const mapTop = parseFloat(this.mapImg.style.top) || 0;
+
+				const element1Left = mapLeft + element1PosXDisplay - (element1Width / 2);
+				const element1Top = mapTop + element1PosYDisplay - (element1Height / 2);
+
+				const element2Left = mapLeft + element2PosXDisplay - (element2Width / 2);
+				const element2Top = mapTop + element2PosYDisplay - (element2Height / 2);
+
+				const element3Left = mapLeft + element3PosXDisplay - (element3Width / 2);
+				const element3Top = mapTop + element3PosYDisplay - (element3Height / 2);
+
+				const textLeft = mapLeft + textPosXDisplay - (textWidth / 2);
+				const textTop = mapTop + textPosYDisplay - (textHeight / 2);
+
+				// 设置位置
+				this.mapElement1.style.left = element1Left + 'px';
+				this.mapElement1.style.top = element1Top + 'px';
+
+				this.mapElement2.style.left = element2Left + 'px';
+				this.mapElement2.style.top = element2Top + 'px';
+
+				this.mapElement3.style.left = element3Left + 'px';
+				this.mapElement3.style.top = element3Top + 'px';
+
+				this.mapText.style.left = textLeft + 'px';
+				this.mapText.style.top = textTop + 'px';
+
+				// 初始显示状态
+				this.mapElement1.style.display = 'block';
+				this.mapElement2.style.display = 'block';
+				this.mapElement3.style.display = 'block';
+				this.mapText.style.display = 'block';
+			}
+
+			bindEvents() {
+				// 触摸开始
+				this.mapContainer.addEventListener('touchstart', (e) => {
+					this.handleTouchStart(e);
+				}, { passive: false });
+
+				// 触摸移动
+				this.mapContainer.addEventListener('touchmove', (e) => {
+					this.handleTouchMove(e);
+				}, { passive: false });
+
+				// 触摸结束
+				this.mapContainer.addEventListener('touchend', (e) => {
+					this.handleTouchEnd(e);
+				}, { passive: false });
+
+				// 窗口大小改变时重新计算边界和元素位置
+				window.addEventListener('resize', () => {
+					this.calculateBounds();
+					this.positionMapElements();
+				});
+
+				// 为第一个地图元素添加点击事件
+				let touchStartTime = 0;
+				let touchStartX = 0;
+				let touchStartY = 0;
+
+				this.mapElement1.addEventListener('touchstart', (e) => {
+					touchStartTime = Date.now();
+					touchStartX = e.touches[0].clientX;
+					touchStartY = e.touches[0].clientY;
+				}, { passive: true });
+
+				this.mapElement1.addEventListener('touchend', (e) => {
+					const touchEndTime = Date.now();
+					const touchEndX = e.changedTouches[0].clientX;
+					const touchEndY = e.changedTouches[0].clientY;
+
+					// 如果触摸时间短且移动距离小，认为是点击
+					const touchDuration = touchEndTime - touchStartTime;
+					const touchDistance = Math.sqrt(
+						Math.pow(touchEndX - touchStartX, 2) +
+						Math.pow(touchEndY - touchStartY, 2)
+					);
+
+					if (touchDuration < 300 && touchDistance < 10) {
+						// 保存当前地图位置
+						const currentMapPosition = parseFloat(this.mapImg.style.left) || 0;
+						localStorage.setItem('mapPosition', currentMapPosition.toString());
+
+						// 播放跳转动画
+						const transitionMask = document.getElementById('page-transition');
+						transitionMask.classList.add('fade-out');
+
+						// 动画结束后跳转到zhicha.html
+						setTimeout(function() {
+							window.location.href = 'zhicha.html';
+						}, 1500); // 等待1.5秒动画完成
+					}
+				}, { passive: true });
+
+				// 为第二个地图元素添加点击事件
+				let touchStartTime2 = 0;
+				let touchStartX2 = 0;
+				let touchStartY2 = 0;
+
+				this.mapElement2.addEventListener('touchstart', (e) => {
+					touchStartTime2 = Date.now();
+					touchStartX2 = e.touches[0].clientX;
+					touchStartY2 = e.touches[0].clientY;
+				}, { passive: true });
+
+				this.mapElement2.addEventListener('touchend', (e) => {
+					const touchEndTime2 = Date.now();
+					const touchEndX2 = e.changedTouches[0].clientX;
+					const touchEndY2 = e.changedTouches[0].clientY;
+
+					// 如果触摸时间短且移动距离小，认为是点击
+					const touchDuration2 = touchEndTime2 - touchStartTime2;
+					const touchDistance2 = Math.sqrt(
+						Math.pow(touchEndX2 - touchStartX2, 2) +
+						Math.pow(touchEndY2 - touchStartY2, 2)
+					);
+
+					if (touchDuration2 < 300 && touchDistance2 < 10) {
+						// 播放跳转动画
+						const transitionMask = document.getElementById('page-transition');
+						transitionMask.classList.add('fade-out');
+
+						// 动画结束后跳转到5.html
+						setTimeout(function() {
+							window.location.href = '5.html';
+						}, 1500); // 等待1.5秒动画完成
+					}
+				}, { passive: true });
+			}
+
+			handleTouchStart(e) {
+				this.isDragging = true;
+				this.startX = e.touches[0].clientX;
+				this.startY = e.touches[0].clientY;
+				this.velocity = 0;
+				this.lastMoveTime = Date.now();
+
+				// 停止之前的惯性动画
+				if (this.animationId) {
+					cancelAnimationFrame(this.animationId);
+					this.animationId = null;
+				}
+
+				// 移除transform，如果有的话
+				this.mapImg.style.transform = 'none';
+				this.currentX = parseFloat(this.mapImg.style.left) || 0;
+			}
+
+			handleTouchMove(e) {
+				if (!this.isDragging) return;
+
+				e.preventDefault();
+
+				const currentX = e.touches[0].clientX;
+				const currentY = e.touches[0].clientY;
+				const deltaX = (currentX - this.startX) * 0.3; // 降低滑动速度
+
+				// 计算速度用于惯性效果
+				const now = Date.now();
+				const timeDelta = now - this.lastMoveTime;
+				if (timeDelta > 0) {
+					this.velocity = deltaX / timeDelta;
+				}
+				this.lastMoveTime = now;
+
+				// 更新地图位置
+				let newX = this.currentX + deltaX;
+
+				// 限制在边界内
+				const oldX = parseFloat(this.mapImg.style.left) || 0;
+				newX = Math.max(this.minX, Math.min(this.maxX, newX));
+				const actualDeltaX = newX - oldX; // 地图实际移动的距离
+
+				this.mapImg.style.left = newX + 'px';
+
+				// 同步移动地图上的元素 - 根据地图实际移动距离
+				this.mapElement1.style.left = (parseFloat(this.mapElement1.style.left) + actualDeltaX) + 'px';
+				this.mapElement2.style.left = (parseFloat(this.mapElement2.style.left) + actualDeltaX) + 'px';
+				this.mapElement3.style.left = (parseFloat(this.mapElement3.style.left) + actualDeltaX) + 'px';
+				this.mapText.style.left = (parseFloat(this.mapText.style.left) + actualDeltaX) + 'px';
+			}
+
+			handleTouchEnd(e) {
+				if (!this.isDragging) return;
+
+				this.isDragging = false;
+
+				// 开始惯性动画
+				this.startInertia();
+			}
+
+			startInertia() {
+				const friction = 0.97; // 摩擦系数
+				const minVelocity = 0.01; // 最小速度阈值
+
+				const animate = () => {
+					if (Math.abs(this.velocity) > minVelocity) {
+						// 应用摩擦力
+						this.velocity *= friction;
+
+						// 更新位置
+						let newX = parseFloat(this.mapImg.style.left) + this.velocity;
+
+						// 限制在边界内
+						newX = Math.max(this.minX, Math.min(this.maxX, newX));
+
+						// 计算移动距离
+						const deltaMove = newX - parseFloat(this.mapImg.style.left);
+
+						this.mapImg.style.left = newX + 'px';
+
+						// 同步移动地图上的元素 - 根据地图实际移动距离
+						const currentElement1Left = parseFloat(this.mapElement1.style.left);
+						const currentElement2Left = parseFloat(this.mapElement2.style.left);
+						const currentElement3Left = parseFloat(this.mapElement3.style.left);
+						const currentTextLeft = parseFloat(this.mapText.style.left);
+
+						this.mapElement1.style.left = (currentElement1Left + deltaMove) + 'px';
+						this.mapElement2.style.left = (currentElement2Left + deltaMove) + 'px';
+						this.mapElement3.style.left = (currentElement3Left + deltaMove) + 'px';
+						this.mapText.style.left = (currentTextLeft + deltaMove) + 'px';
+
+						this.animationId = requestAnimationFrame(animate);
+					} else {
+						// 惯性结束
+						this.animationId = null;
+					}
+				};
+
+				this.animationId = requestAnimationFrame(animate);
+			}
+		}
+
+		// 初始化地图控制器
+		document.addEventListener('DOMContentLoaded', () => {
+			new MapController();
+		});
+	</script>
+</body>
+</html>

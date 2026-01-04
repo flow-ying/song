@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>移动端图片插入与切换</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f5f5f5;
+            overflow: hidden;
+            padding: 20px;
+        }
+        .main-container {
+            position: relative;
+            width: 85vw;
+            max-width: 400px;
+            height: auto;
+        }
+        /* 🔥 第三张图片 - 在底层 */
+        .bottom-img {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: auto;
+            display: block;
+            z-index: 3;
+        }
+        /* 🔥 背景图 - 中层 */
+        .main-img {
+            position: relative;
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 2;
+        }
+        
+        /* 🍜 中央碗图片 - 变大并下移 */
+        .center-bowl {
+            position: absolute;
+            top: 54%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: auto;
+            z-index: 5;
+            pointer-events: none;
+        }
+        
+        /* 🥄 勺子 - 根据碗的位置调整 */
+        .spoon {
+            position: absolute;
+            top: 35%;
+            left: 70%;
+            transform: translate(-50%, -50%) rotate(5deg);
+            width: 45%;
+            height: auto;
+            z-index: 6;
+            transition: none;
+        }
+        
+        /* 👆 鼠标手图标 - 根据勺子位置调整 */
+        .hand-icon {
+            position: absolute;
+            top: 45%;
+            left: 70%;
+            transform: translate(-50%, -50%);
+            width: 13%;
+            height: auto;
+            z-index: 7;
+            cursor: grab;
+            display: none;
+        }
+        
+        .hand-icon.active {
+            cursor: grabbing;
+        }
+        
+        .hand-icon.show {
+            display: block;
+        }
+        
+        /* 📝 拖动提示文字 - 根据手的位置调整 */
+        .drag-tip {
+            position: absolute;
+            top: 52%;
+            left: 73%;
+            transform: translate(-50%, -50%);
+            font-family: '方正楷体', 'FZKai-Z03S', 'KaiTi', '楷体', serif;
+            font-size: 3.25%; /* 相对于容器宽度 */
+            color: #333;
+            z-index: 7;
+            white-space: nowrap;
+            display: none;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.9);
+            font-weight: 500;
+        }
+        
+        .drag-tip.show {
+            display: block;
+        }
+        
+        /* 📊 进度显示 - 在碗上方 */
+        .progress-text {
+            position: absolute;
+            top: 32%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: '方正楷体', 'FZKai-Z03S', 'KaiTi', '楷体', serif;
+            font-size: 4.5%; /* 相对于容器宽度 */
+            color: #8B4513;
+            z-index: 7;
+            font-weight: bold;
+            display: none;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
+        }
+        
+        .progress-text.show {
+            display: block;
+        }
+        
+        /* 🎨 完成后的图片 - 与碗同样大小和位置 */
+        .finished-img {
+            position: absolute;
+            top: 54%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: auto;
+            z-index: 8;
+            display: none;
+        }
+        
+        .finished-img.show {
+            display: block;
+        }
+        
+        /* 🔥 可切换的图标 - 缩小尺寸 */
+        .switchable-icon1, .switchable-icon2, .switchable-icon3 {
+            position: absolute;
+            bottom: 1.5%;
+            width: 25%;
+            aspect-ratio: 1/1;
+            cursor: pointer;
+            z-index: 4;
+            transition: transform 0.2s ease;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        
+        .switchable-icon1 {
+            left: 5%;
+            background-image: url('物品栏/2.png');
+        }
+        
+        .switchable-icon2 {
+            left: 38.5%;
+            background-image: url('物品栏/4.png');
+        }
+        .switchable-icon3 {
+            left: 72.5%;
+            background-image: url('物品栏/3.png');
+        }
+            
+        
+        
+        .switchable-icon1:active,
+        .switchable-icon2:active,
+        .switchable-icon3:active {
+            transform: scale(0.95);
+        }
+        
+        .insert-icon {
+            position: absolute;
+            width: 15%;
+            height: auto;
+            cursor: pointer;
+            z-index: 10;
+            transition: transform 0.2s ease;
+        }
+        .insert-icon:active {
+            transform: scale(0.9);
+        }
+        .icon-top-right {
+            top: 2%;
+            right: 2%;
+        }
+        .icon-top-left {
+            top: 2%;
+            left: 2%;
+        }
+        
+       /* 小屏幕优化 */
+        @media screen and (max-width: 375px) {
+            .main-container {
+                width: 90vw;
+            }
+            .insert-icon {
+                width: 16%;
+            }
+            .icon-top-right {
+                top: 2%;
+                right: 2%;
+            }
+            .icon-top-left {
+                top: 2%;
+                left: 2%;
+            }
+            .center-bowl {
+                width: 110%;
+            }
+            .finished-img {
+                width: 110%;
+            }
+            .drag-tip {
+                font-size: 2.75%;
+            }
+            .progress-text {
+                font-size: 4%;
+                top: 33%;
+            }
+            .switchable-icon1, .switchable-icon2, .switchable-icon3 {
+                width: 23%;
+            }
+            .switchable-icon1 {
+                left: 6%;
+            }
+            .switchable-icon2 {
+                left: 39.5%;
+            }
+            .switchable-icon3 {
+                left: 73.5%;
+            }
+        }
+        
+        /* 大屏幕优化 */
+        @media screen and (min-width: 768px) {
+            .main-container {
+                max-width: 350px;
+            }
+            .insert-icon {
+                width: 14%;
+            }
+            .icon-top-right {
+                top: 2%;
+                right: 2%;
+            }
+            .icon-top-left {
+                top: 2%;
+                left: 2%;
+            }
+            .center-bowl {
+                width: 90%;
+            }
+            .finished-img {
+                width: 90%;
+            }
+            .drag-tip {
+                font-size: 3.75%;
+            }
+            .progress-text {
+                font-size: 5%;
+                top: 34%;
+            }
+            .switchable-icon1, .switchable-icon2, .switchable-icon3 {
+                width: 24%;
+            }
+            .switchable-icon1 {
+                left: 4.8%;
+            }
+            .switchable-icon2 {
+                left: 37.5%;
+            }
+            .switchable-icon3 {
+                left: 71.5%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景音乐 -->
+    <audio id="bg-music" loop preload="auto">
+        <source src="../music.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="main-container">
+        <!-- 🔥 第三张图片（底层） -->
+        <img src="物品栏/1.png" alt="底部框架" class="bottom-img">
+        
+        <!-- 🔥 背景图（中层） -->
+        <img src="背景.png" alt="主图" class="main-img">
+        
+        <!-- 🍜 中央碗图片 -->
+        <img src="3.gif" alt="碗" class="center-bowl" id="bowlImg">
+        
+        <!-- 🥄 勺子 -->
+        <img src="4.png" alt="勺子" class="spoon" id="spoon">
+        
+        <!-- 👆 鼠标手图标 -->
+        <img src="5.png" alt="拖动手势" class="hand-icon" id="handIcon">
+        
+        <!-- 📝 拖动提示文字 -->
+        <div class="drag-tip" id="dragTip">拖动绘制</div>
+        
+        <!-- 📊 进度显示 -->
+        <div class="progress-text" id="progressText">0%</div>
+        
+        <!-- 🎨 完成后的图片 -->
+        <img src="3.3.gif" alt="完成作品" class="finished-img" id="finishedImg">
+        
+        <!-- 🔥 可切换的图标 -->
+        <div class="switchable-icon1" id="bottomSwitchIcon1"></div>
+        <div class="switchable-icon2" id="bottomSwitchIcon2"></div>
+        <div class="switchable-icon3" id="bottomSwitchIcon3"></div>
+        
+        <!-- 原有的右上角按钮 -->
+        <img src="按键/3.png" alt="右上角图标" class="insert-icon icon-top-right">
+        
+        <!-- 原有的左上角按钮 -->
+        <img src="按键/1.png" alt="左上角图标" class="insert-icon icon-top-left" id="switchIcon">
+    </div>
+    
+    <script>
+        // 获取音频元素
+        const bgMusic = document.getElementById('bg-music');
+        const switchIcon = document.getElementById('switchIcon');
+        const iconPaths = ["按键/1.png", "按键/2.png"];
+
+        // 页面加载时恢复音乐状态
+        window.addEventListener('load', function() {
+            const savedMusicState = localStorage.getItem('musicPlaying');
+            const savedMusicTime = localStorage.getItem('musicCurrentTime');
+
+            if (savedMusicState === 'true') {
+                switchIcon.src = iconPaths[0]; // 显示播放图标
+                // 延迟播放以确保音频元素已准备好
+                setTimeout(() => {
+                    if (savedMusicTime) {
+                        const time = parseFloat(savedMusicTime);
+                        if (!isNaN(time) && time >= 0) {
+                            bgMusic.currentTime = time;
+                        }
+                    }
+                    bgMusic.play().catch(function(error) {
+                        console.log('Audio play failed:', error);
+                    });
+                }, 100);
+            } else {
+                switchIcon.src = iconPaths[1]; // 显示暂停图标
+            }
+        });
+
+        // 音乐按钮切换功能
+        let currentIconIndex = 0;
+        switchIcon.addEventListener('click', function() {
+            const isPlaying = !bgMusic.paused;
+
+            if (isPlaying) {
+                // 当前正在播放，暂停音乐
+                bgMusic.pause();
+                switchIcon.src = iconPaths[1]; // 显示暂停图标
+                localStorage.setItem('musicPlaying', 'false');
+                currentIconIndex = 1;
+            } else {
+                // 当前暂停，播放音乐
+                bgMusic.play().catch(function(error) {
+                    console.log('Audio play failed:', error);
+                });
+                switchIcon.src = iconPaths[0]; // 显示播放图标
+                localStorage.setItem('musicPlaying', 'true');
+                currentIconIndex = 0;
+            }
+        });
+        
+        // 🔥 底部第一个图标切换功能（激活拖动模式）
+        const bottomSwitchIcon1 = document.getElementById('bottomSwitchIcon1');
+        const bottomIconPaths1 = ["物品栏/2.png", "物品栏/2.1.png"];
+        let currentBottomIndex1 = 0;
+        let dragMode = false;
+        
+        bottomSwitchIcon1.addEventListener('click', function() {
+            currentBottomIndex1 = 1 - currentBottomIndex1;
+            bottomSwitchIcon1.style.backgroundImage = `url('${bottomIconPaths1[currentBottomIndex1]}')`;
+            
+           
+        });
+        
+        // 🔥 底部第二个图标切换功能
+        const bottomSwitchIcon2 = document.getElementById('bottomSwitchIcon2');
+        const bottomIconPaths2 = ["物品栏/4.png", "物品栏/4.1.png"];
+        let currentBottomIndex2 = 0;
+        bottomSwitchIcon2.addEventListener('click', function() {
+            currentBottomIndex2 = 1 - currentBottomIndex2;
+            bottomSwitchIcon2.style.backgroundImage = `url('${bottomIconPaths2[currentBottomIndex2]}')`;
+             // 切换到第二张图片时激活拖动模式
+            if (currentBottomIndex2 === 1) {
+                dragMode = true;
+                handIcon.classList.add('show');
+                dragTip.classList.add('show');
+                progressText.classList.add('show');
+                progressText.textContent = '0%';
+                // 重置拖动距离
+                dragDistance = 0;
+            } else {
+                dragMode = false;
+                handIcon.classList.remove('show');
+                dragTip.classList.remove('show');
+                progressText.classList.remove('show');
+            }
+        });
+        
+        // 🔥 底部第三个图标切换功能
+        const bottomSwitchIcon3 = document.getElementById('bottomSwitchIcon3');
+        const bottomIconPaths3 = ["物品栏/3.png", "物品栏/3.1.png"];
+        let currentBottomIndex3 = 0;
+        bottomSwitchIcon3.addEventListener('click', function() {
+            currentBottomIndex3 = 1 - currentBottomIndex3;
+            bottomSwitchIcon3.style.backgroundImage = `url('${bottomIconPaths3[currentBottomIndex3]}')`;
+        });
+        
+        // 🎨 拖动绘制功能
+        const handIcon = document.getElementById('handIcon');
+        const spoon = document.getElementById('spoon');
+        const bowlImg = document.getElementById('bowlImg');
+        const finishedImg = document.getElementById('finishedImg');
+        const dragTip = document.getElementById('dragTip');
+        const progressText = document.getElementById('progressText');
+        const mainContainer = document.querySelector('.main-container');
+        
+        let isDragging = false;
+        let startX, startY;
+        let currentX, currentY;
+        let dragDistance = 0;
+        const requiredDistance = 150; // 拖动距离设置为150像素
+        
+        // 获取碗的边界
+        function getBowlBounds() {
+            const bowlRect = bowlImg.getBoundingClientRect();
+            const containerRect = mainContainer.getBoundingClientRect();
+            
+            return {
+                left: bowlRect.left - containerRect.left,
+                right: bowlRect.right - containerRect.left,
+                top: bowlRect.top - containerRect.top,
+                bottom: bowlRect.bottom - containerRect.top,
+                centerX: (bowlRect.left + bowlRect.right) / 2 - containerRect.left,
+                centerY: (bowlRect.top + bowlRect.bottom) / 2 - containerRect.top,
+                width: bowlRect.width,
+                height: bowlRect.height
+            };
+        }
+        
+        // 检查位置是否在碗内
+        function isInsideBowl(x, y) {
+            const bounds = getBowlBounds();
+            const radius = bounds.width / 2;
+            const dx = x - bounds.centerX;
+            const dy = y - bounds.centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return distance <= radius * 0.85; // 稍微缩小范围，留出边距
+        }
+        
+        // 更新进度显示
+        function updateProgress() {
+            const progress = Math.min(100, Math.floor((dragDistance / requiredDistance) * 100));
+            progressText.textContent = progress + '%';
+        }
+        
+        // 鼠标/触摸开始
+        function handleStart(e) {
+            if (!dragMode) return;
+            
+            e.preventDefault();
+            isDragging = true;
+            
+            const point = e.touches ? e.touches[0] : e;
+            startX = point.clientX;
+            startY = point.clientY;
+            currentX = startX;
+            currentY = startY;
+            
+            handIcon.classList.add('active');
+        }
+        
+        // 鼠标/触摸移动
+        function handleMove(e) {
+            if (!isDragging || !dragMode) return;
+            
+            e.preventDefault();
+            const point = e.touches ? e.touches[0] : e;
+            currentX = point.clientX;
+            currentY = point.clientY;
+            
+            const containerRect = mainContainer.getBoundingClientRect();
+            const relativeX = currentX - containerRect.left;
+            const relativeY = currentY - containerRect.top;
+            
+            // 检查是否在碗内
+            if (isInsideBowl(relativeX, relativeY)) {
+                // 更新手的位置
+                const percentX = (relativeX / containerRect.width) * 100;
+                const percentY = (relativeY / containerRect.height) * 100;
+                
+                handIcon.style.left = percentX + '%';
+                handIcon.style.top = percentY + '%';
+                
+                dragTip.style.left = percentX + '%';
+                dragTip.style.top = (percentY + 6) + '%';
+                
+                // 勺子跟随移动
+                spoon.style.left = percentX + '%';
+                spoon.style.top = percentY + '%';
+                
+                // 计算拖动距离
+                const dx = currentX - startX;
+                const dy = currentY - startY;
+                dragDistance += Math.sqrt(dx * dx + dy * dy);
+                startX = currentX;
+                startY = currentY;
+                
+                // 更新进度
+                updateProgress();
+                
+                // 检查是否完成绘制
+                if (dragDistance >= requiredDistance) {
+                    completeDrawing();
+                }
+            }
+        }
+        
+        // 鼠标/触摸结束
+        function handleEnd(e) {
+            if (!isDragging) return;
+            
+            isDragging = false;
+            handIcon.classList.remove('active');
+        }
+        
+        // 完成绘制
+        function completeDrawing() {
+            isDragging = false;
+            dragMode = false;
+            
+            // 隐藏手和提示
+            handIcon.classList.remove('show', 'active');
+            dragTip.classList.remove('show');
+            progressText.classList.remove('show');
+            
+            // 隐藏碗和勺子
+            bowlImg.style.display = 'none';
+            spoon.style.display = 'none';
+            
+            // 显示完成图片
+            finishedImg.classList.add('show');
+
+            // 重置第一个图标
+            currentBottomIndex1 = 0;
+            bottomSwitchIcon1.style.backgroundImage = `url('${bottomIconPaths1[0]}')`;
+
+            // 重置拖动距离
+            dragDistance = 0;
+
+            // 添加点击事件监听器 - 当完成图片显示后，点击跳转到 hf1.html
+            document.addEventListener('click', function jumpToHf1() {
+                // 检查完成图片是否可见
+                if (finishedImg.classList.contains('show')) {
+                    // 移除事件监听器防止重复点击
+                    document.removeEventListener('click', jumpToHf1);
+
+                    // 创建跳转动画
+                    const transitionDiv = document.createElement('div');
+                    transitionDiv.style.cssText = `
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100vw;
+                        height: 100vh;
+                        background-color: rgba(0, 0, 0, 0.8);
+                        z-index: 9999;
+                        opacity: 0;
+                        transition: opacity 1.5s ease-out;
+                    `;
+                    document.body.appendChild(transitionDiv);
+
+                    // 触发动画
+                    requestAnimationFrame(() => {
+                        transitionDiv.style.opacity = '1';
+                    });
+
+                    // 1.5秒后跳转
+                    setTimeout(function() {
+                        // 在跳转前保存当前音乐状态
+                        const bgMusic = document.getElementById('bg-music');
+                        const isPlaying = !bgMusic.paused;
+                        localStorage.setItem('musicPlaying', isPlaying ? 'true' : 'false');
+                        localStorage.setItem('musicCurrentTime', bgMusic.currentTime.toFixed(3));
+
+                        window.location.href = '../分享页/hf1.html';
+                    }, 1500);
+                }
+            });
+        }
+        
+        // 绑定事件（支持鼠标和触摸）
+        handIcon.addEventListener('mousedown', handleStart);
+        handIcon.addEventListener('touchstart', handleStart, { passive: false });
+        
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('touchmove', handleMove, { passive: false });
+        
+        document.addEventListener('mouseup', handleEnd);
+        document.addEventListener('touchend', handleEnd);
+    </script>
+</body>
+</html>

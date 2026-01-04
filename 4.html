@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>opening</title>
+  <title>game_instruction</title>
   <style>
     * {
       margin: 0;
@@ -17,13 +17,11 @@
       width: 100%;
       height: 100%;
       overflow: auto;
-      /* 改为 auto 以显示白色背景 */
       font-family: "PingFang SC", "Helvetica Neue", Arial, sans-serif;
       background-color: #fff;
-      /* 添加白色背景 */
     }
 
-    /* 新增：电脑端居中容器 */
+    /* 电脑端居中容器 */
     .desktop-wrapper {
       width: 100%;
       height: 100%;
@@ -33,125 +31,169 @@
       background-color: #fff;
     }
 
-    /* 新增：移动端窗口容器 */
+    /* 移动端窗口容器 */
     .mobile-container {
       position: relative;
       width: 100%;
       height: 100%;
       max-width: 400px;
-      /* 移动端窗口最大宽度 */
       max-height: 800px;
-      /* 移动端窗口最大高度 */
       margin: 0 auto;
       overflow: hidden;
       box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
-      /* 添加轻微阴影增强视觉效果 */
     }
 
-    /* 修改原 container 样式 */
+    /* 主容器 */
     .container {
       position: relative;
       width: 100%;
       height: 100%;
-      background-image: url('./picture/1/2.gif');
+      background-image: url('./picture/4/bg.gif');
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
       cursor: pointer;
     }
 
+    /* 1.gif 层 */
     .overlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background-image: url('./picture/1/1.gif');
+      background-image: url('./picture/4/1.gif');
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
+      z-index: 1;
     }
 
-    .music-btn {
+    /* 2.gif 层 - 优化自适应 */
+    .image-2 {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 95%;
+      height: auto;
+      transform: translateX(-50%);
+      background-image: url('./picture/4/2.gif');
+      background-size: contain;
+      background-position: top center;
+      background-repeat: no-repeat;
+      z-index: 2;
+    }
+
+    /* 3.gif 层 - 优化自适应 */
+    .image-3 {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('./picture/4/3.gif');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      z-index: 3;
+    }
+
+    /* 按钮通用样式 */
+    .music-btn,
+    .return-btn {
       position: absolute;
       top: 3%;
-      left: 5%;
       width: 12%;
-      /* 稍微调大一点 */
       height: auto;
       max-width: 50px;
       max-height: 50px;
+      cursor: pointer;
       z-index: 10;
-      /* 提高层级 */
     }
 
-    .music-btn img {
+    .music-btn {
+      left: 5%;
+    }
+
+    .return-btn {
+      right: 5%;
+    }
+
+    .music-btn img,
+    .return-btn img {
       width: 100%;
       height: auto;
       display: block;
-      cursor: pointer;
     }
 
-    .start-text {
-      position: absolute;
-      bottom: 9%;
-      left: 50%;
-      transform: translateX(-50%);
-      color: #fff;
-      font-size: 6vw;
-      font-weight: bold;
-      text-align: center;
-      white-space: nowrap;
-      background: transparent;
-      text-shadow: none;
-      border: none;
-      padding: 0;
-      z-index: 10;
-      /* 提高层级 */
-      pointer-events: none;
-      /* 防止文字干扰点击 */
-    }
-
-    /* 媒体查询优化 */
+    /* 电脑端优化 */
     @media (min-width: 768px) {
-      .start-text {
-        font-size: 30px;
-      }
-
-      /* 电脑端：显示移动端尺寸窗口 */
       .mobile-container {
         width: 400px;
         height: 800px;
         border-radius: 20px;
-        /* 圆角效果 */
         overflow: hidden;
       }
-    }
 
-    @media (max-width: 320px) {
-      .start-text {
-        font-size: 14px;
+      /* 优化2.gif在电脑端的显示 */
+      .image-2 {
+        width: 95%;
+        height: auto;
+        max-width: 380px;
+        /* 400 * 0.95 = 380px */
+        max-height: calc(800px * 0.95);
+        /* 限制最大高度 */
       }
     }
 
-    /* 手机端：全屏显示 */
-    @media (max-width: 767px) {
-      .desktop-wrapper {
-        padding: 0;
+    /* 平板端优化 */
+    @media (min-width: 481px) and (max-width: 767px) {
+      .mobile-container {
+        max-width: 90vw;
+        max-height: 90vh;
+        margin: 5vh auto;
       }
+    }
 
+    /* 小屏幕手机优化 */
+    @media (max-width: 480px) {
       .mobile-container {
         max-width: 100%;
         max-height: 100%;
         border-radius: 0;
         box-shadow: none;
       }
+
+      /* 在小屏幕上调整2.gif大小 */
+      .image-2 {
+        width: 90%;
+        /* 小屏幕上稍微减小 */
+      }
+    }
+
+    /* 超小屏幕优化 */
+    @media (max-width: 320px) {
+      .image-2 {
+        width: 85%;
+        /* 进一步减小 */
+      }
+    }
+
+    /* 横屏模式优化 */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .mobile-container {
+        max-width: 80vh;
+        max-height: 80vw;
+      }
+
+      .image-2 {
+        width: 80%;
+      }
     }
   </style>
 </head>
 
 <body>
-  <!-- 新增外层容器 -->
   <!-- 背景音乐 -->
   <audio id="bg-music" loop preload="auto">
     <source src="./music.mp3" type="audio/mpeg">
@@ -161,10 +203,16 @@
     <div class="mobile-container">
       <div class="container" id="mainContainer">
         <div class="overlay"></div>
+        <div class="image-2"></div>
+        <div class="image-3"></div>
+
         <div class="music-btn" id="musicButton">
           <img src="./picture/button/music.gif" alt="音乐按钮" id="musicIcon">
         </div>
-        <div class="start-text">点击开始探索</div>
+
+        <div class="return-btn" id="returnButton">
+          <img src="./picture/button/return.gif" alt="返回按钮">
+        </div>
       </div>
     </div>
   </div>
@@ -219,14 +267,28 @@
       }
     });
 
-    // 添加页面点击跳转功能
+    // 返回按钮功能
+    document.getElementById('returnButton').addEventListener('click', function (event) {
+      event.stopPropagation();
+      // 返回前保存音乐状态
+      const isPlaying = !bgMusic.paused;
+      localStorage.setItem('musicPlaying', isPlaying ? 'true' : 'false');
+      localStorage.setItem('musicCurrentTime', bgMusic.currentTime.toFixed(3));
+
+      window.location.href = '3.html';
+    });
+
+    // 页面点击跳转功能
     document.getElementById('mainContainer').addEventListener('click', function () {
       // 跳转前保存音乐状态
       const isPlaying = !bgMusic.paused;
       localStorage.setItem('musicPlaying', isPlaying ? 'true' : 'false');
       localStorage.setItem('musicCurrentTime', bgMusic.currentTime.toFixed(3));
 
-      window.location.href = '2.html';
+      // 从故事线跳转到地图时，清除地图位置，让地图从最左侧开始显示
+      localStorage.removeItem('mapPosition');
+
+      window.location.href = 'map.html';
     });
   </script>
 </body>

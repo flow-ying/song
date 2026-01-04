@@ -1,0 +1,1021 @@
+<!doctype html>
+<html lang="zh">
+<head>
+	<meta charset="utf-8" />
+	<!-- ★★★ 手机端核心适配：完美视口配置，解决所有手机适配问题，重中之重 ★★★ -->
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+	<title>mobile-bg-simple</title>
+	<style>
+		/* 初始化：手机端彻底清除所有内外边距+滚动条，全屏纯黑背景 */
+		* { margin: 0; padding: 0; box-sizing: border-box; }
+		html, body { 
+			width: 100%;
+			height: 100%; 
+			margin: 0; 
+			padding: 0;
+			background: #000; 
+			overflow: hidden; /* 禁止页面滚动，彻底防溢出 */
+			touch-action: none; /* 禁止手机双指缩放，避免错位 */
+		}
+		/* 舞台容器：手机端绝对全屏，居中兜底，无任何留白 */
+		#stage { 
+			position: fixed; 
+			left: 0;
+			top: 0;
+			width: 100vw;
+			height: 100vh;
+			display: flex; 
+			align-items: center; 
+			justify-content: center; 
+			overflow: hidden;
+		}
+		/* 第一张背景图：手机端最佳适配规则，占满屏幕但不变形 */
+		#bg-img { 
+			display: block; 
+			width: 100vw;
+			height: 100vh;
+			object-fit: contain; /* ★ 核心：图片完整显示+居中+不变形，手机端必加 */
+			pointer-events: none;
+		}
+		/* ★ 第二张图容器 - 完美重叠+层级最高+手机无偏移 */
+		#bottom-overlay {
+			position: absolute;
+			left: 0;
+			top: 0;
+			width: 100vw;
+			height: 100vh;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			pointer-events: none;
+			z-index: 999; /* 优先级拉满，绝对在最上层，不会被任何元素遮挡 */
+		}
+		/* ★ 第二张图：和第一张图【同宽+同高+完全重合+不变形】，核心适配 */
+		#bottom-overlay img {
+			display: block;
+			width: 100vw;
+			height: 100vh;
+			object-fit: contain; /* 和第一张图适配规则完全一致，保证严丝合缝 */
+		}
+		/* ★ 第三张和第四张图：绝对定位，位置和大小由JavaScript控制 */
+		#wupinglan-1 {
+			position: absolute;
+			z-index: 1002;
+			cursor: grab;
+		}
+		#wupinglan-1:active {
+			cursor: grabbing;
+		}
+		#wupinglan-1 img {
+			display: block;
+			object-fit: contain;
+			pointer-events: none; /* 图片本身不接收事件，容器接收 */
+		}
+		#wupinglan-2 {
+			position: absolute;
+			z-index: 1003;
+			cursor: grab;
+		}
+		#wupinglan-2:active {
+			cursor: grabbing;
+		}
+		#wupinglan-2 img {
+			display: block;
+			object-fit: contain;
+			pointer-events: none; /* 图片本身不接收事件，容器接收 */
+		}
+		#dongtu {
+			position: absolute;
+			z-index: 1004;
+			pointer-events: none; /* 完全禁用所有交互 */
+		}
+		#dongtu img {
+			display: block;
+			object-fit: contain;
+		}
+		#anjian-3 {
+			position: absolute;
+			z-index: 1004;
+			cursor: pointer;
+		}
+		#anjian-3 img {
+			display: block;
+			object-fit: contain;
+		}
+		#anjian-guide {
+			position: absolute;
+			z-index: 1004; /* 与dongtu相同 */
+			pointer-events: none; /* 完全禁用所有交互 */
+		}
+		#anjian-guide img {
+			display: block;
+			object-fit: contain;
+		}
+		#anjian-1 {
+			position: absolute;
+			z-index: 1004;
+			cursor: pointer; /* 显示可点击光标 */
+		}
+		#anjian-1 img {
+			display: block;
+			object-fit: contain;
+		}
+		#guide-text {
+			position: absolute;
+			color: black;
+			font-family: "方正楷体_GBK","FZKaiTi_GB2312", "楷体", "KaiTi", serif;
+			text-align: center;
+			pointer-events: none; /* 完全禁用所有交互 */
+			z-index: 1004; /* 与图片相同 */
+		}
+		#wupinglan-1-2 {
+			position: absolute;
+			z-index: 1005;
+			pointer-events: none; /* 完全禁用所有交互 */
+		}
+		#wupinglan-1-2 img {
+			display: block;
+			object-fit: contain;
+		}
+		#wupinglan-2-2 {
+			position: absolute;
+			z-index: 1006;
+			pointer-events: none; /* 完全禁用所有交互，优先级最高 */
+		}
+		#wupinglan-2-2 img {
+			display: block;
+			object-fit: contain;
+		}
+		#wupinglan-3 {
+			position: absolute;
+			z-index: 1007;
+			cursor: grab;
+		}
+		#wupinglan-3:active {
+			cursor: grabbing;
+		}
+		#wupinglan-3 img {
+			display: block;
+			object-fit: contain;
+			pointer-events: none; /* 图片本身不接收事件，容器接收 */
+		}
+		#wupinglan-4 {
+			position: absolute;
+			z-index: 1008;
+			pointer-events: none; /* 完全禁用所有交互，优先级最高 */
+		}
+		#wupinglan-4 img {
+			display: block;
+			object-fit: contain;
+		}
+		#wupinglan-5 {
+			position: absolute;
+			z-index: 1009; /* 比其他图片更高 */
+			pointer-events: none; /* 默认禁用，拖拽时启用 */
+			cursor: grab;
+		}
+		#wupinglan-5.dragging {
+			cursor: grabbing;
+		}
+		#wupinglan-5 img {
+			display: block;
+			object-fit: contain;
+		}
+		#wupinglan-6 {
+			position: absolute;
+			z-index: 1010; /* 比第八张图片更高 */
+			cursor: grab;
+		}
+		#wupinglan-6:active {
+			cursor: grabbing;
+		}
+		#wupinglan-6 img {
+			display: block;
+			object-fit: contain;
+			pointer-events: none; /* 图片本身不接收事件，容器接收 */
+		}
+		/* 页面切换遮罩 */
+		#page-transition {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100vw;
+			height: 100vh;
+			background: #000;
+			z-index: 10000;
+			opacity: 1; /* 默认显示黑色，等待淡入 */
+			pointer-events: none;
+			transition: opacity 1.5s ease; /* 慢慢晕染开的动画 */
+		}
+		#page-transition.fade-in {
+			opacity: 0;
+			animation: fadeIn 1.5s ease forwards;
+		}
+		#page-transition.fade-out {
+			opacity: 1;
+			animation: fadeOut 1.5s ease forwards;
+			pointer-events: auto;
+		}
+		@keyframes fadeOut {
+			from { opacity: 0; }
+			to { opacity: 1; }
+		}
+		@keyframes fadeIn {
+			from { opacity: 1; }
+			to { opacity: 0; }
+		}
+	</style>
+</head>
+<body>
+	<div id="stage">
+		<img id="bg-img" src="./diancha1/beijing.gif" alt="" />
+		<div id="bottom-overlay">
+			<img src="./zhicha/2.gif" alt="" />
+		</div>
+		<div id="wupinglan-1">
+			<img src="./diancha1/2.gif" alt="" />
+		</div>
+		<div id="wupinglan-2">
+			<img src="./diancha1/3.2.gif" alt="" />
+		</div>
+		<div id="dongtu">
+			<img src="./diancha1/dongtu.GIF" alt="" />
+		</div>
+		<div id="anjian-3">
+			<img src="./anjian/3.gif" alt="" />
+		</div>
+		<div id="wupinglan-1-2">
+			<img src="./diancha1/2.2.gif" alt="" />
+		</div>
+		<div id="wupinglan-2-2">
+			<img src="./diancha1/3.gif" alt="" />
+		</div>
+		<div id="wupinglan-3">
+			<img src="./diancha1/5.gif" alt="" />
+		</div>
+		<div id="wupinglan-4">
+			<img src="./diancha1/6.gif" alt="" />
+		</div>
+		<div id="wupinglan-5">
+			<img src="./diancha1/4.2.gif" alt="" />
+		</div>
+		<div id="wupinglan-6">
+			<img src="./diancha1/4.gif" alt="" />
+		</div>
+		<div id="anjian-guide">
+			<img src="./anjian/5.gif" alt="" />
+		</div>
+		<div id="guide-text">
+			拖动桌面上的物品到物品栏
+		</div>
+		<!-- 背景音乐 -->
+		<audio id="bg-music" loop preload="auto">
+			<source src="./music.mp3" type="audio/mpeg">
+		</audio>
+		<div id="anjian-1">
+			<img src="./anjian/1.gif" alt="" />
+		</div>
+		<!-- 页面切换遮罩 -->
+		<div id="page-transition"></div>
+	</div>
+	<script>
+		function adjustOverlayPositions() {
+			const bgImg = document.getElementById('bg-img');
+			const wupinglan1Container = document.getElementById('wupinglan-1');
+			const wupinglan2Container = document.getElementById('wupinglan-2');
+			const dongtuContainer = document.getElementById('dongtu');
+			const anjian3Container = document.getElementById('anjian-3');
+			const wupinglan12Container = document.getElementById('wupinglan-1-2');
+			const wupinglan22Container = document.getElementById('wupinglan-2-2');
+			const wupinglan3Container = document.getElementById('wupinglan-3');
+			const wupinglan4Container = document.getElementById('wupinglan-4');
+			const wupinglan5Container = document.getElementById('wupinglan-5');
+			const wupinglan6Container = document.getElementById('wupinglan-6');
+			const anjianGuideContainer = document.getElementById('anjian-guide');
+			const anjian1Container = document.getElementById('anjian-1');
+			const guideTextContainer = document.getElementById('guide-text');
+			const wupinglan1 = wupinglan1Container.querySelector('img');
+			const wupinglan2 = wupinglan2Container.querySelector('img');
+			const dongtu = dongtuContainer.querySelector('img');
+			const anjian3 = anjian3Container.querySelector('img');
+			const wupinglan12 = wupinglan12Container.querySelector('img');
+			const wupinglan22 = wupinglan22Container.querySelector('img');
+			const wupinglan3 = wupinglan3Container.querySelector('img');
+			const wupinglan4 = wupinglan4Container.querySelector('img');
+			const wupinglan5 = wupinglan5Container.querySelector('img');
+			const wupinglan6 = wupinglan6Container.querySelector('img');
+			const anjianGuide = anjianGuideContainer.querySelector('img');
+			const anjian1 = anjian1Container.querySelector('img');
+
+			// 获取背景图的原始尺寸
+			const tempImg = new Image();
+			tempImg.onload = function() {
+				const bgOriginalWidth = this.naturalWidth;
+				const bgOriginalHeight = this.naturalHeight;
+
+				// 获取当前容器的尺寸（100vw x 100vh）
+				const containerWidth = window.innerWidth;
+				const containerHeight = window.innerHeight;
+
+				// 计算背景图在当前容器中的缩放比例
+				const scaleX = containerWidth / bgOriginalWidth;
+				const scaleY = containerHeight / bgOriginalHeight;
+				const scale = Math.min(scaleX, scaleY); // object-fit: contain 使用最小比例
+
+				// 计算背景图的实际显示尺寸
+				const bgDisplayWidth = bgOriginalWidth * scale;
+				const bgDisplayHeight = bgOriginalHeight * scale;
+
+				// 计算背景图在容器中的居中位置
+				const bgLeft = (containerWidth - bgDisplayWidth) / 2;
+				const bgTop = (containerHeight - bgDisplayHeight) / 2;
+
+				// 设置第一二张图片的大小为背景图显示尺寸的20%
+				const overlayWidth = bgDisplayWidth * 0.2;
+				const overlayHeight = bgDisplayHeight * 0.2;
+
+				wupinglan1.style.width = overlayWidth + 'px';
+				wupinglan1.style.height = overlayHeight + 'px';
+				wupinglan2.style.width = overlayWidth + 'px';
+				wupinglan2.style.height = overlayHeight + 'px';
+
+				// === 第三张图片（dongtu.GIF）的大小设置 - 可独立调整 ===
+				const dongtuWidth = bgDisplayWidth * 0.8;  // 80% 大小（可调整）
+				const dongtuHeight = bgDisplayHeight * 0.8; // 80% 大小（可调整）
+				dongtu.style.width = dongtuWidth + 'px';
+				dongtu.style.height = dongtuHeight + 'px';
+
+				// === 新增图片（3.gif）的大小设置 - 仿照suicha.html ===
+				const anjian3Width = bgDisplayWidth * 0.09;  // 9% 大小（仿照suicha.html）
+				const anjian3Height = bgDisplayHeight * 0.09; // 9% 大小（仿照suicha.html）
+				anjian3.style.width = anjian3Width + 'px';
+				anjian3.style.height = anjian3Height + 'px';
+
+				// === 按键引导图片（5.gif）的大小设置 - 仿照dongtu ===
+				const anjianGuideWidth = bgDisplayWidth * 0.07;  // 80% 大小（仿照dongtu）
+				const anjianGuideHeight = bgDisplayHeight * 0.07; // 80% 大小（仿照dongtu）
+				anjianGuide.style.width = anjianGuideWidth + 'px';
+				anjianGuide.style.height = anjianGuideHeight + 'px';
+
+				// === 新增图片（1.gif）的大小设置 - 仿照dongtu ===
+				const anjian1Width = bgDisplayWidth * 0.09;  // 80% 大小（仿照dongtu）
+				const anjian1Height = bgDisplayHeight * 0.09; // 80% 大小（仿照dongtu）
+				anjian1.style.width = anjian1Width + 'px';
+				anjian1.style.height = anjian1Height + 'px';
+
+				// === 引导文字的大小设置 - 与图片相似 ===
+				const guideTextWidth = bgDisplayWidth * 0.5;  // 文字宽度
+				const guideTextHeight = bgDisplayHeight * 0.05; // 文字高度
+				const guideTextFontSize = bgDisplayWidth * 0.035; // 字体大小随背景图缩放
+				guideTextContainer.style.width = guideTextWidth + 'px';
+				guideTextContainer.style.height = guideTextHeight + 'px';
+				guideTextContainer.style.fontSize = guideTextFontSize + 'px';
+				guideTextContainer.style.lineHeight = guideTextHeight + 'px'; // 垂直居中
+
+				// === 第四张图片（1.2.gif）的大小设置 - 可独立调整 ===
+				const wupinglan12Width = bgDisplayWidth * 0.78;  // 50% 大小（可调整）
+				const wupinglan12Height = bgDisplayHeight * 0.78; // 50% 大小（可调整）
+				wupinglan12.style.width = wupinglan12Width + 'px';
+				wupinglan12.style.height = wupinglan12Height + 'px';
+
+				// === 第五张图片（2.2.gif）的大小设置 - 可独立调整 ===
+				const wupinglan22Width = bgDisplayWidth * 0.45;  // 50% 大小（可调整）
+				const wupinglan22Height = bgDisplayHeight * 0.45; // 50% 大小（可调整）
+				wupinglan22.style.width = wupinglan22Width + 'px';
+				wupinglan22.style.height = wupinglan22Height + 'px';
+
+				// === 第六张图片（3.gif）的大小设置 - 可独立调整，与第三张图相同逻辑 ===
+				const wupinglan3Width = bgDisplayWidth * 0.8;  // 80% 大小（可调整）
+				const wupinglan3Height = bgDisplayHeight * 0.8; // 80% 大小（可调整）
+				wupinglan3.style.width = wupinglan3Width + 'px';
+				wupinglan3.style.height = wupinglan3Height + 'px';
+
+				// === 第七张图片（4.gif）的大小设置 - 可独立调整，与第三张图相同逻辑 ===
+				const wupinglan4Width = bgDisplayWidth * 0.25;  // 80% 大小（可调整）
+				const wupinglan4Height = bgDisplayHeight * 0.25; // 80% 大小（可调整）
+				wupinglan4.style.width = wupinglan4Width + 'px';
+				wupinglan4.style.height = wupinglan4Height + 'px';
+
+				// === 第八张图片（4.2.gif）的大小设置 - 仿照dongtu ===
+				const wupinglan5Width = bgDisplayWidth * 0.4;  // 80% 大小（仿照dongtu）
+				const wupinglan5Height = bgDisplayHeight * 0.4; // 80% 大小（仿照dongtu）
+				wupinglan5.style.width = wupinglan5Width + 'px';
+				wupinglan5.style.height = wupinglan5Height + 'px';
+
+				// === 第九张图片（4.gif）的大小设置 - 仿照dongtu ===
+				const wupinglan6Width = bgDisplayWidth * 0.2;  // 80% 大小（仿照dongtu）
+				const wupinglan6Height = bgDisplayHeight * 0.2; // 80% 大小（仿照dongtu）
+				wupinglan6.style.width = wupinglan6Width + 'px';
+				wupinglan6.style.height = wupinglan6Height + 'px';
+
+				// === 请在这里指定您想要的位置 ===
+				// 基于背景图原始尺寸的坐标（像素值）
+
+				// 第一张图片在背景图原始尺寸中的位置
+				const pos1OriginalX = 110; // 在原始背景图中的X坐标（像素）
+				const pos1OriginalY = 915; // 在原始背景图中的Y坐标（像素）
+
+				// 第二张图片在背景图原始尺寸中的位置
+				const pos2OriginalX = 250; // 在原始背景图中的X坐标（像素）
+				const pos2OriginalY = 935; // 在原始背景图中的Y坐标（像素）
+
+				// 第三张图片（dongtu.GIF）在背景图原始尺寸中的位置 - 可独立调整
+				const pos3OriginalX = 320; // 在原始背景图中的X坐标（像素）
+				const pos3OriginalY = 520; // 在原始背景图中的Y坐标（像素）
+
+				// 新增图片（3.gif）在背景图原始尺寸中的位置 - 仿照suicha.html
+				const pos13OriginalX = 570; // 在原始背景图中的X坐标（像素）
+				const pos13OriginalY = 60; // 在原始背景图中的Y坐标（像素）
+
+				// 第四张图片（1.2.gif）在背景图原始尺寸中的位置 - 可独立调整
+				const pos4OriginalX = 305; // 在原始背景图中的X坐标（像素）
+				const pos4OriginalY = 560; // 在原始背景图中的Y坐标（像素）
+
+				// 第五张图片（2.2.gif）在背景图原始尺寸中的位置 - 可独立调整
+				const pos5OriginalX = 492; // 在原始背景图中的X坐标（像素）
+				const pos5OriginalY = 400; // 在原始背景图中的Y坐标（像素）
+
+				// 第六张图片（3.gif）在背景图原始尺寸中的位置 - 可独立调整
+				const pos6OriginalX = 305; // 在原始背景图中的X坐标（像素）
+				const pos6OriginalY = 570; // 在原始背景图中的Y坐标（像素）
+
+				// 第七张图片（4.gif）在背景图原始尺寸中的位置 - 可独立调整
+				const pos7OriginalX = 110; // 在原始背景图中的X坐标（像素）
+				const pos7OriginalY = 915; // 在原始背景图中的Y坐标（像素）
+
+				// 第八张图片（4.2.gif）在背景图原始尺寸中的位置 - 仿照dongtu
+				const pos10OriginalX = 480; // 在原始背景图中的X坐标（像素）
+				const pos10OriginalY = 690; // 在原始背景图中的Y坐标（像素）
+
+				// 第九张图片（4.gif）在背景图原始尺寸中的位置 - 仿照dongtu
+				const pos11OriginalX = 392; // 在原始背景图中的X坐标（像素）
+				const pos11OriginalY = 935; // 在原始背景图中的Y坐标（像素）
+
+				// 按键引导图片（5.gif）在背景图原始尺寸中的位置 - 仿照dongtu
+				const pos8OriginalX = 180; // 在原始背景图中的X坐标（像素）
+				const pos8OriginalY = 185; // 在原始背景图中的Y坐标（像素）
+
+				// 引导文字在背景图原始尺寸中的位置 - 在图片右侧
+				const pos9OriginalX = 330; // 在原始背景图中的X坐标（像素）
+				const pos9OriginalY = 185; // 在原始背景图中的Y坐标（像素）
+
+				// 新增图片（1.gif）在背景图原始尺寸中的位置 - 仿照dongtu
+				const pos12OriginalX = 65; // 在原始背景图中的X坐标（像素）
+				const pos12OriginalY = 60; // 在原始背景图中的Y坐标（像素）
+
+				// 根据缩放比例计算实际显示位置
+				const pos1DisplayX = pos1OriginalX * scale;
+				const pos1DisplayY = pos1OriginalY * scale;
+
+				const pos2DisplayX = pos2OriginalX * scale;
+				const pos2DisplayY = pos2OriginalY * scale;
+
+				const pos3DisplayX = pos3OriginalX * scale;
+				const pos3DisplayY = pos3OriginalY * scale;
+
+				const pos13DisplayX = pos13OriginalX * scale;
+				const pos13DisplayY = pos13OriginalY * scale;
+
+				const pos4DisplayX = pos4OriginalX * scale;
+				const pos4DisplayY = pos4OriginalY * scale;
+
+				const pos5DisplayX = pos5OriginalX * scale;
+				const pos5DisplayY = pos5OriginalY * scale;
+
+				const pos6DisplayX = pos6OriginalX * scale;
+				const pos6DisplayY = pos6OriginalY * scale;
+
+				const pos7DisplayX = pos7OriginalX * scale;
+				const pos7DisplayY = pos7OriginalY * scale;
+
+				const pos8DisplayX = pos8OriginalX * scale;
+				const pos8DisplayY = pos8OriginalY * scale;
+
+				const pos9DisplayX = pos9OriginalX * scale;
+				const pos9DisplayY = pos9OriginalY * scale;
+
+				const pos10DisplayX = pos10OriginalX * scale;
+				const pos10DisplayY = pos10OriginalY * scale;
+
+				const pos11DisplayX = pos11OriginalX * scale;
+				const pos11DisplayY = pos11OriginalY * scale;
+
+				const pos12DisplayX = pos12OriginalX * scale;
+				const pos12DisplayY = pos12OriginalY * scale;
+
+				// 计算相对于视口的实际像素位置
+				const pos1Left = bgLeft + pos1DisplayX - (overlayWidth / 2);
+				const pos1Top = bgTop + pos1DisplayY - (overlayHeight / 2);
+
+				const pos2Left = bgLeft + pos2DisplayX - (overlayWidth / 2);
+				const pos2Top = bgTop + pos2DisplayY - (overlayHeight / 2);
+
+				const pos3Left = bgLeft + pos3DisplayX - (dongtuWidth / 2);
+				const pos3Top = bgTop + pos3DisplayY - (dongtuHeight / 2);
+
+				const pos13Left = bgLeft + pos13DisplayX - (anjian3Width / 2);
+				const pos13Top = bgTop + pos13DisplayY - (anjian3Height / 2);
+
+				const pos4Left = bgLeft + pos4DisplayX - (wupinglan12Width / 2);
+				const pos4Top = bgTop + pos4DisplayY - (wupinglan12Height / 2);
+
+				const pos5Left = bgLeft + pos5DisplayX - (wupinglan22Width / 2);
+				const pos5Top = bgTop + pos5DisplayY - (wupinglan22Height / 2);
+
+				const pos6Left = bgLeft + pos6DisplayX - (wupinglan3Width / 2);
+				const pos6Top = bgTop + pos6DisplayY - (wupinglan3Height / 2);
+
+				const pos7Left = bgLeft + pos7DisplayX - (wupinglan4Width / 2);
+				const pos7Top = bgTop + pos7DisplayY - (wupinglan4Height / 2);
+
+				const pos8Left = bgLeft + pos8DisplayX - (anjianGuideWidth / 2);
+				const pos8Top = bgTop + pos8DisplayY - (anjianGuideHeight / 2);
+
+				const pos9Left = bgLeft + pos9DisplayX - (guideTextWidth / 2);
+				const pos9Top = bgTop + pos9DisplayY - (guideTextHeight / 2);
+
+				const pos10Left = bgLeft + pos10DisplayX - (wupinglan5Width / 2);
+				const pos10Top = bgTop + pos10DisplayY - (wupinglan5Height / 2);
+
+				const pos11Left = bgLeft + pos11DisplayX - (wupinglan6Width / 2);
+				const pos11Top = bgTop + pos11DisplayY - (wupinglan6Height / 2);
+
+				const pos12Left = bgLeft + pos12DisplayX - (anjian1Width / 2);
+				const pos12Top = bgTop + pos12DisplayY - (anjian1Height / 2);
+
+				// 设置位置
+				wupinglan1Container.style.left = pos1Left + 'px';
+				wupinglan1Container.style.top = pos1Top + 'px';
+				wupinglan2Container.style.left = pos2Left + 'px';
+				wupinglan2Container.style.top = pos2Top + 'px';
+				dongtuContainer.style.left = pos3Left + 'px';
+				dongtuContainer.style.top = pos3Top + 'px';
+				anjian3Container.style.left = pos13Left + 'px';
+				anjian3Container.style.top = pos13Top + 'px';
+				wupinglan12Container.style.left = pos4Left + 'px';
+				wupinglan12Container.style.top = pos4Top + 'px';
+				wupinglan22Container.style.left = pos5Left + 'px';
+				wupinglan22Container.style.top = pos5Top + 'px';
+				wupinglan3Container.style.left = pos6Left + 'px';
+				wupinglan3Container.style.top = pos6Top + 'px';
+				wupinglan4Container.style.left = pos7Left + 'px';
+				wupinglan4Container.style.top = pos7Top + 'px';
+				anjianGuideContainer.style.left = pos8Left + 'px';
+				anjianGuideContainer.style.top = pos8Top + 'px';
+				guideTextContainer.style.left = pos9Left + 'px';
+				guideTextContainer.style.top = pos9Top + 'px';
+				wupinglan5Container.style.left = pos10Left + 'px';
+				wupinglan5Container.style.top = pos10Top + 'px';
+				wupinglan6Container.style.left = pos11Left + 'px';
+				wupinglan6Container.style.top = pos11Top + 'px';
+				anjian1Container.style.left = pos12Left + 'px';
+				anjian1Container.style.top = pos12Top + 'px';
+
+				// 移除CSS中的居中定位，因为现在用JavaScript精确控制
+				wupinglan1Container.style.transform = 'none';
+				wupinglan2Container.style.transform = 'none';
+				dongtuContainer.style.transform = 'none';
+				anjian3Container.style.transform = 'none';
+				wupinglan12Container.style.transform = 'none';
+				wupinglan22Container.style.transform = 'none';
+				wupinglan3Container.style.transform = 'none';
+				wupinglan4Container.style.transform = 'none';
+				wupinglan5Container.style.transform = 'none';
+				wupinglan6Container.style.transform = 'none';
+				anjianGuideContainer.style.transform = 'none';
+				anjian1Container.style.transform = 'none';
+				guideTextContainer.style.transform = 'none';
+
+				// 隐藏第三到第七张图片，按键引导图片在开头保持显示，第八张图片隐藏，第九张图片显示
+				dongtuContainer.style.display = 'none';
+				anjian3Container.style.display = 'block'; // 新增图片一开始显示，供用户调整
+				wupinglan12Container.style.display = 'none';
+				wupinglan22Container.style.display = 'none';
+				wupinglan3Container.style.display = 'none';
+				wupinglan4Container.style.display = 'none'; // 第七张图片一开始也隐藏
+				wupinglan5Container.style.display = 'none'; // 第八张图片一开始隐藏
+				wupinglan6Container.style.display = 'block'; // 第九张图片一开始显示
+				// anjianGuideContainer.style.display = 'block'; // 按键引导图片在开头保持显示
+			};
+			tempImg.src = bgImg.src;
+		}
+
+		// 页面加载完成后调整位置和大小
+		window.addEventListener('load', adjustOverlayPositions);
+		// 窗口大小改变时重新调整
+		window.addEventListener('resize', adjustOverlayPositions);
+
+		// 拖拽功能变量
+		let isDragging = false;
+		let currentElement = null;
+		let offsetX = 0;
+		let offsetY = 0;
+		let originalLeft = 0;
+		let originalTop = 0;
+
+		// 初始化拖拽功能
+		function initDragFunctionality() {
+			const containers = [
+				document.getElementById('wupinglan-1'),
+				document.getElementById('wupinglan-2'),
+				document.getElementById('wupinglan-3'), // 第六张图片也可以拖拽
+				document.getElementById('wupinglan-6')  // 第九张图片也可以拖拽
+			];
+
+			containers.forEach(container => {
+				// 触摸开始
+				container.addEventListener('touchstart', function(e) {
+					if (e.touches.length !== 1) return; // 只处理单指触摸
+
+					isDragging = true;
+					currentElement = this;
+
+					// 记录触摸点相对于元素的位置
+					const rect = this.getBoundingClientRect();
+					const touch = e.touches[0];
+					offsetX = touch.clientX - rect.left;
+					offsetY = touch.clientY - rect.top;
+
+					// 记录原始位置
+					originalLeft = parseFloat(this.style.left) || 0;
+					originalTop = parseFloat(this.style.top) || 0;
+
+					// 防止页面滚动
+					e.preventDefault();
+				});
+
+				// 鼠标按下（桌面端测试用）
+				container.addEventListener('mousedown', function(e) {
+					if (e.button !== 0) return; // 只响应左键
+
+					isDragging = true;
+					currentElement = this;
+
+					// 记录鼠标相对于元素的位置
+					const rect = this.getBoundingClientRect();
+					offsetX = e.clientX - rect.left;
+					offsetY = e.clientY - rect.top;
+
+					// 记录原始位置
+					originalLeft = parseFloat(this.style.left) || 0;
+					originalTop = parseFloat(this.style.top) || 0;
+
+					// 防止文本选择
+					e.preventDefault();
+				});
+			});
+
+			// 触摸移动
+			document.addEventListener('touchmove', function(e) {
+				if (!isDragging || !currentElement) return;
+
+				// 计算新位置
+				const touch = e.touches[0];
+				const newLeft = touch.clientX - offsetX;
+				const newTop = touch.clientY - offsetY;
+
+				// 更新元素位置
+				currentElement.style.left = newLeft + 'px';
+				currentElement.style.top = newTop + 'px';
+
+				// 防止页面滚动
+				e.preventDefault();
+			});
+
+			// 鼠标移动（桌面端测试用）
+			document.addEventListener('mousemove', function(e) {
+				if (!isDragging || !currentElement) return;
+
+				// 计算新位置
+				const newLeft = e.clientX - offsetX;
+				const newTop = e.clientY - offsetY;
+
+				// 更新元素位置
+				currentElement.style.left = newLeft + 'px';
+				currentElement.style.top = newTop + 'px';
+			});
+
+			// 触摸结束
+			document.addEventListener('touchend', function(e) {
+				if (!isDragging || !currentElement) return;
+
+				// 检查是否在背景图中央范围内
+				const bgImg = document.getElementById('bg-img');
+				const bgRect = bgImg.getBoundingClientRect();
+				const bgCenterX = bgRect.left + bgRect.width / 2;
+				const bgCenterY = bgRect.top + bgRect.height / 2;
+
+				// 定义中央范围（可调整的比例）
+				const rangeRatio = 0.5; // 50%的范围（可调整）
+				const rangeWidth = bgRect.width * rangeRatio;
+				const rangeHeight = bgRect.height * rangeRatio;
+
+				const currentRect = currentElement.getBoundingClientRect();
+				const currentCenterX = currentRect.left + currentRect.width / 2;
+				const currentCenterY = currentRect.top + currentRect.height / 2;
+
+				const isInCenterRange1 = currentElement.id === 'wupinglan-1' &&
+					Math.abs(currentCenterX - bgCenterX) < rangeWidth / 2 &&
+					Math.abs(currentCenterY - bgCenterY) < rangeHeight / 2;
+
+				const isInCenterRange2 = currentElement.id === 'wupinglan-2' &&
+					Math.abs(currentCenterX - bgCenterX) < rangeWidth / 2 &&
+					Math.abs(currentCenterY - bgCenterY) < rangeHeight / 2;
+
+				// 检查第六张图片是否拖拽到下方指定范围
+				let isInBottomRange = false;
+				if (currentElement.id === 'wupinglan-3') {
+					// === 定义下方范围（可由您调整） ===
+					const bottomRangeTop = window.innerHeight * 0.8;    // 上边界（距离屏幕顶部80%）
+					const bottomRangeBottom = window.innerHeight * 0.95; // 下边界（距离屏幕顶部95%）
+					const bottomRangeLeft = window.innerWidth * 0.2;     // 左边界（距离屏幕左侧20%）
+					const bottomRangeRight = window.innerWidth * 0.8;    // 右边界（距离屏幕右侧20%）
+
+					// 检查第六张图片中心是否在下方范围内
+					isInBottomRange = currentCenterX >= bottomRangeLeft &&
+						currentCenterX <= bottomRangeRight &&
+						currentCenterY >= bottomRangeTop &&
+						currentCenterY <= bottomRangeBottom;
+				}
+
+				if (isInCenterRange1) {
+					// 第一张图片消失，第四张图片出现
+					currentElement.style.display = 'none';
+					document.getElementById('wupinglan-1-2').style.display = 'block';
+				} else if (isInCenterRange2) {
+					// 第二张图片消失，第五张图片出现
+					currentElement.style.display = 'none';
+					document.getElementById('wupinglan-2-2').style.display = 'block';
+				} else if (isInBottomRange) {
+					// 第六张图片拖拽到第七张图片附近，第六张消失，第七张出现，同时隐藏按键引导图和文字
+					currentElement.style.display = 'none';
+					document.getElementById('wupinglan-4').style.display = 'block';
+					document.getElementById('anjian-guide').style.display = 'none';
+					document.getElementById('guide-text').style.display = 'none';
+				} else if (currentElement.id === 'wupinglan-6') {
+					// 第九张图片拖拽到屏幕中央范围，消失并显示第八张图片
+					const isInCenterRange6 = Math.abs(currentCenterX - bgCenterX) < rangeWidth / 2 &&
+						Math.abs(currentCenterY - bgCenterY) < rangeHeight / 2;
+					if (isInCenterRange6) {
+						currentElement.style.display = 'none';
+						document.getElementById('wupinglan-5').style.display = 'block';
+					} else {
+						// 恢复到原始位置
+						currentElement.style.left = originalLeft + 'px';
+						currentElement.style.top = originalTop + 'px';
+					}
+				} else {
+					// 恢复到原始位置
+					currentElement.style.left = originalLeft + 'px';
+					currentElement.style.top = originalTop + 'px';
+				}
+
+				// 重置状态
+				isDragging = false;
+				currentElement = null;
+				offsetX = 0;
+				offsetY = 0;
+			});
+
+			// 鼠标松开（桌面端测试用）
+			document.addEventListener('mouseup', function(e) {
+				if (!isDragging || !currentElement) return;
+
+				// 检查是否在背景图中央范围内
+				const bgImg = document.getElementById('bg-img');
+				const bgRect = bgImg.getBoundingClientRect();
+				const bgCenterX = bgRect.left + bgRect.width / 2;
+				const bgCenterY = bgRect.top + bgRect.height / 2;
+
+				// 定义中央范围（可调整的比例）
+				const rangeRatio = 0.5; // 50%的范围（可调整）
+				const rangeWidth = bgRect.width * rangeRatio;
+				const rangeHeight = bgRect.height * rangeRatio;
+
+				const currentRect = currentElement.getBoundingClientRect();
+				const currentCenterX = currentRect.left + currentRect.width / 2;
+				const currentCenterY = currentRect.top + currentRect.height / 2;
+
+				const isInCenterRange1 = currentElement.id === 'wupinglan-1' &&
+					Math.abs(currentCenterX - bgCenterX) < rangeWidth / 2 &&
+					Math.abs(currentCenterY - bgCenterY) < rangeHeight / 2;
+
+				const isInCenterRange2 = currentElement.id === 'wupinglan-2' &&
+					Math.abs(currentCenterX - bgCenterX) < rangeWidth / 2 &&
+					Math.abs(currentCenterY - bgCenterY) < rangeHeight / 2;
+
+				// 检查第六张图片是否拖拽到下方指定范围
+				let isInBottomRange = false;
+				if (currentElement.id === 'wupinglan-3') {
+					// === 定义下方范围（可由您调整） ===
+					const bottomRangeTop = window.innerHeight * 0.8;    // 上边界（距离屏幕顶部80%）
+					const bottomRangeBottom = window.innerHeight * 0.95; // 下边界（距离屏幕顶部95%）
+					const bottomRangeLeft = window.innerWidth * 0.2;     // 左边界（距离屏幕左侧20%）
+					const bottomRangeRight = window.innerWidth * 0.8;    // 右边界（距离屏幕右侧20%）
+
+					// 检查第六张图片中心是否在下方范围内
+					isInBottomRange = currentCenterX >= bottomRangeLeft &&
+						currentCenterX <= bottomRangeRight &&
+						currentCenterY >= bottomRangeTop &&
+						currentCenterY <= bottomRangeBottom;
+				}
+
+				if (isInCenterRange1) {
+					// 第一张图片消失，第四张图片出现
+					currentElement.style.display = 'none';
+					document.getElementById('wupinglan-1-2').style.display = 'block';
+				} else if (isInCenterRange2) {
+					// 第二张图片消失，第五张图片出现
+					currentElement.style.display = 'none';
+					document.getElementById('wupinglan-2-2').style.display = 'block';
+				} else if (isInBottomRange) {
+					// 第六张图片拖拽到第七张图片附近，第六张消失，第七张出现，同时隐藏按键引导图和文字
+					currentElement.style.display = 'none';
+					document.getElementById('wupinglan-4').style.display = 'block';
+					document.getElementById('anjian-guide').style.display = 'none';
+					document.getElementById('guide-text').style.display = 'none';
+				} else if (currentElement.id === 'wupinglan-6') {
+					// 第九张图片拖拽到屏幕中央范围，消失并显示第八张图片
+					const isInCenterRange6 = Math.abs(currentCenterX - bgCenterX) < rangeWidth / 2 &&
+						Math.abs(currentCenterY - bgCenterY) < rangeHeight / 2;
+					if (isInCenterRange6) {
+						currentElement.style.display = 'none';
+						document.getElementById('wupinglan-5').style.display = 'block';
+					} else {
+						// 恢复到原始位置
+						currentElement.style.left = originalLeft + 'px';
+						currentElement.style.top = originalTop + 'px';
+					}
+				} else {
+					// 恢复到原始位置
+					currentElement.style.left = originalLeft + 'px';
+					currentElement.style.top = originalTop + 'px';
+				}
+
+				// 重置状态
+				isDragging = false;
+				currentElement = null;
+				offsetX = 0;
+				offsetY = 0;
+			});
+		}
+
+		// 初始化点击交互功能
+		function initClickInteraction() {
+			document.addEventListener('click', function(e) {
+				// 检查第七张图片是否可见（表示已经完成所有交互）
+				const wupinglan4 = document.getElementById('wupinglan-4');
+				const transitionMask = document.getElementById('page-transition');
+
+				const is4Visible = wupinglan4.style.display !== 'none';
+
+				// 如果第七张图片可见，点击界面触发跳转
+				if (is4Visible) {
+					// 添加慢慢晕染开的动画
+					transitionMask.classList.add('fade-out');
+
+					// 动画结束后跳转到 diancha2.html
+					setTimeout(function() {
+						// 在跳转前保存当前音乐状态
+						const bgMusic = document.getElementById('bg-music');
+						const anjian1Img = document.getElementById('anjian-1').querySelector('img');
+						const isPlaying = !bgMusic.paused;
+						localStorage.setItem('musicPlaying', isPlaying ? 'true' : 'false');
+						localStorage.setItem('musicCurrentTime', bgMusic.currentTime.toFixed(3));
+
+						window.location.href = 'diancha2.html';
+					}, 1500); // 等待1.5秒动画完成
+					return;
+				}
+
+				// 检查第四张、第五张和第八张图片是否都可见
+				const wupinglan12 = document.getElementById('wupinglan-1-2');
+				const wupinglan22 = document.getElementById('wupinglan-2-2');
+				const wupinglan5 = document.getElementById('wupinglan-5'); // 第八张图片
+				const anjianGuide = document.getElementById('anjian-guide');
+				const guideText = document.getElementById('guide-text');
+				const dongtu = document.getElementById('dongtu');
+
+				const is12Visible = wupinglan12.style.display !== 'none';
+				const is22Visible = wupinglan22.style.display !== 'none';
+				const is5Visible = wupinglan5.style.display !== 'none';
+
+				// 如果第四张、第五张和第八张图片都可见，一起消失，同时第三张动图出现
+				if (is12Visible && is22Visible && is5Visible) {
+					wupinglan12.style.display = 'none';
+					wupinglan22.style.display = 'none';
+					wupinglan5.style.display = 'none';
+					document.getElementById('wupinglan-6').style.display = 'none'; // 隐藏第九张图片
+
+					// 强制重新加载GIF以确保从头开始播放
+					const dongtuImg = document.querySelector('#dongtu img');
+					const originalSrc = dongtuImg.src;
+					dongtuImg.src = '';
+					dongtuImg.src = originalSrc;
+
+					// 第三张动图出现时，按键引导图片和文字一同消失
+					anjianGuide.style.display = 'none';
+					guideText.style.display = 'none';
+
+					dongtu.style.display = 'block';
+
+					// 动图播放完成后消失并显示第六张图片，同时显示按键引导图和文字
+					setTimeout(function() {
+						dongtu.style.display = 'none';
+						document.getElementById('wupinglan-3').style.display = 'block';
+						// 当第六张图出现时显示按键引导图和文字
+						document.getElementById('anjian-guide').style.display = 'block';
+						document.getElementById('guide-text').style.display = 'block';
+					}, 4000); // 3秒后切换（可调整时间）
+				}
+			});
+		}
+
+		// 在页面加载后初始化拖拽和点击功能
+		window.addEventListener('load', function() {
+			// 页面进入时的淡入动画
+			const transitionMask = document.getElementById('page-transition');
+			transitionMask.classList.add('fade-in');
+
+			initDragFunctionality();
+			initClickInteraction();
+
+			// 添加 anjian-3 的点击事件
+			const anjian3Container = document.getElementById('anjian-3');
+			anjian3Container.addEventListener('click', function() {
+				// 播放跳转动画
+				const transitionMask = document.getElementById('page-transition');
+				transitionMask.classList.add('fade-out');
+
+				// 动画结束后跳转回map.html
+				setTimeout(function() {
+					window.location.href = 'map.html';
+				}, 1500); // 等待1.5秒动画完成
+			});
+
+			// 新增图片点击事件 - 音乐控制（1.gif=播放状态，2.gif=暂停状态）
+			const anjian1Container = document.getElementById('anjian-1');
+			const anjian1Img = anjian1Container.querySelector('img');
+			const bgMusic = document.getElementById('bg-music');
+
+			// 页面加载时恢复或设置初始状态
+			const savedMusicState = localStorage.getItem('musicPlaying');
+			const savedMusicTime = localStorage.getItem('musicCurrentTime');
+
+			if (savedMusicState === 'true') {
+				// 如果之前在播放，显示播放状态图标
+				anjian1Img.src = './anjian/1.gif';
+				// 恢复播放位置（添加延迟确保音频元素完全加载）
+				setTimeout(() => {
+					if (savedMusicTime) {
+						const time = parseFloat(savedMusicTime);
+						if (!isNaN(time) && time >= 0) {
+							bgMusic.currentTime = time;
+						}
+					}
+					// 尝试播放音乐
+					bgMusic.play().catch(function(error) {
+						console.log('音乐播放失败:', error);
+						// 如果播放失败，切换到暂停状态
+						anjian1Img.src = './anjian/2.gif';
+					});
+				}, 100);
+			} else {
+				// 初始状态为暂停
+				anjian1Img.src = './anjian/2.gif';
+			}
+
+			anjian1Container.addEventListener('click', function() {
+				const currentSrc = anjian1Img.src;
+
+				if (currentSrc.includes('anjian/1.gif')) {
+					// 1.gif显示时点击，切换到2.gif并暂停音乐
+					anjian1Img.src = './anjian/2.gif';
+					if (!bgMusic.paused) {
+						bgMusic.pause();
+					}
+					// 保存状态（使用更高精度的时间戳）
+					localStorage.setItem('musicPlaying', 'false');
+					localStorage.setItem('musicCurrentTime', bgMusic.currentTime.toFixed(3));
+				} else if (currentSrc.includes('anjian/2.gif')) {
+					// 2.gif显示时点击，切换回1.gif并播放音乐
+					anjian1Img.src = './anjian/1.gif';
+					if (bgMusic.paused) {
+						// 添加小延迟确保音频元素准备好
+						setTimeout(() => {
+							bgMusic.play().catch(function(error) {
+								console.log('音乐播放失败:', error);
+								// 如果播放失败，保持暂停状态
+								anjian1Img.src = './anjian/2.gif';
+							});
+						}, 50);
+					}
+					// 保存状态
+					localStorage.setItem('musicPlaying', 'true');
+					localStorage.setItem('musicCurrentTime', bgMusic.currentTime.toFixed(3));
+				}
+			});
+		});
+	</script>
+</body>
+</html>

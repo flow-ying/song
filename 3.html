@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>intro</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body,
+    html {
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      /* 改为 auto 以显示白色背景 */
+      font-family: "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+      background-color: #fff;
+      /* 添加白色背景 */
+    }
+
+    /* 新增：电脑端居中容器 */
+    .desktop-wrapper {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #fff;
+    }
+
+    /* 新增：移动端窗口容器 */
+    .mobile-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      max-width: 400px;
+      /* 移动端窗口最大宽度 */
+      max-height: 800px;
+      /* 移动端窗口最大高度 */
+      margin: 0 auto;
+      overflow: hidden;
+      box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    /* 修改原 container 样式 */
+    .container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background-image: url('./picture/3/1.gif');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    /* 新增：中间层 - 3.gif */
+    .middle-image {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 90%;
+      /* 初始大小调整为原有的90% */
+      height: 90%;
+      /* 初始大小调整为原有的90% */
+      transform: translateX(-50%) translateY(-3%);
+      /* 初始位置：水平居中并稍稍上移 */
+      background-image: url('./picture/3/3.gif');
+      background-size: contain;
+      /* 使用contain确保完整显示 */
+      background-position: center;
+      background-repeat: no-repeat;
+      z-index: 1;
+      /* 确保它在1.gif和2.gif之间 */
+      transition: none;
+      /* 初始状态无过渡效果 */
+    }
+
+    /* 动画状态 */
+    .middle-image.animate {
+      width: 100%;
+      /* 最终大小变为100% */
+      height: 100%;
+      /* 最终大小变为100% */
+      top: 50%;
+      transform: translateX(-50%) translateY(-50%);
+      /* 最终位置：居中 */
+      transition: all 1s linear;
+      /* 动画持续1秒，线性运动 */
+    }
+
+    /* 动画第一阶段：先稍稍上移 */
+    .middle-image.animate-phase1 {
+      transform: translateX(-50%) translateY(-6%);
+      /* 再上移一点 */
+      transition: all 0.3s linear;
+      /* 第一阶段动画持续0.3秒 */
+    }
+
+    .content-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('./picture/3/2.gif');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      cursor: pointer;
+      z-index: 2;
+      /* 确保它在最上层 */
+      transition: none;
+      /* 初始状态无过渡效果 */
+    }
+
+    /* 信封下移动画 */
+    .content-image.animate {
+      top: 100%;
+      /* 下移至屏幕外 */
+      transform: scale(0.9);
+      /* 缩小到90% */
+      transition: all 0.8s linear;
+      /* 动画持续0.8秒，线性运动 */
+    }
+
+    .music-btn {
+      position: absolute;
+      top: 3%;
+      left: 5%;
+      width: 12%;
+      /* 稍微调大一点 */
+      height: auto;
+      max-width: 50px;
+      max-height: 50px;
+      cursor: pointer;
+      z-index: 10;
+      /* 确保按钮在最上层 */
+    }
+
+    .music-btn img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .hint-text {
+      position: absolute;
+      bottom: 7%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #fff;
+      font-size: 6vw;
+      font-weight: bold;
+      text-align: center;
+      white-space: nowrap;
+      background: transparent;
+      text-shadow: none;
+      border: none;
+      padding: 0;
+      z-index: 10;
+      /* 确保文字在最上层 */
+      pointer-events: none;
+      /* 防止文字干扰点击 */
+      opacity: 1;
+      /* 初始可见 */
+      transition: opacity 0.3s ease;
+      /* 淡出效果 */
+    }
+
+    /* 文字隐藏状态 */
+    .hint-text.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* 继续按钮 - 动画结束后显示 */
+    .continue-btn {
+      position: absolute;
+      bottom: 7%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #fff;
+      font-size: 6vw;
+      font-weight: bold;
+      text-align: center;
+      white-space: nowrap;
+      background: transparent;
+      text-shadow: none;
+      border: none;
+      padding: 0;
+      z-index: 10;
+      opacity: 0;
+      /* 初始不可见 */
+      transition: opacity 0.5s ease;
+      /* 淡入效果 */
+      pointer-events: auto;
+      /* 允许点击 */
+      cursor: pointer;
+    }
+
+    /* 继续按钮显示状态 */
+    .continue-btn.show {
+      opacity: 1;
+    }
+
+    /* 媒体查询优化 */
+    @media (min-width: 768px) {
+
+      .hint-text,
+      .continue-btn {
+        font-size: 28px;
+        /* 调整为合适的大小 */
+      }
+
+      /* 电脑端：显示移动端尺寸窗口 */
+      .mobile-container {
+        width: 400px;
+        height: 800px;
+        border-radius: 20px;
+        overflow: hidden;
+      }
+
+      /* 电脑端调整中间层大小 */
+      .middle-image {
+        width: 360px;
+        /* 400 * 0.9 = 360 */
+        height: 720px;
+        /* 800 * 0.9 = 720 */
+        transform: translateX(-50%) translateY(-20px);
+        /* 使用像素值上移，更精确 */
+      }
+
+      /* 电脑端动画第一阶段 */
+      .middle-image.animate-phase1 {
+        transform: translateX(-50%) translateY(-40px);
+        /* 再上移20像素 */
+      }
+    }
+
+    @media (max-width: 320px) {
+
+      .hint-text,
+      .continue-btn {
+        font-size: 18px;
+      }
+
+      /* 小屏幕设备调整上移距离 */
+      .middle-image {
+        transform: translateX(-50%) translateY(-2%);
+      }
+
+      .middle-image.animate-phase1 {
+        transform: translateX(-50%) translateY(-4%);
+      }
+    }
+
+    /* 手机端：全屏显示 */
+    @media (max-width: 767px) {
+      .desktop-wrapper {
+        padding: 0;
+      }
+
+      .mobile-container {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+      .hint-text,
+      .continue-btn {
+        font-size: 6vw;
+      }
+
+      /* 手机端使用百分比调整 */
+      .middle-image {
+        transform: translateX(-50%) translateY(-3%);
+      }
+
+      .middle-image.animate-phase1 {
+        transform: translateX(-50%) translateY(-6%);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 背景音乐 -->
+  <audio id="bg-music" loop preload="auto">
+    <source src="./music.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- 新增外层容器 -->
+  <div class="desktop-wrapper">
+    <div class="mobile-container">
+      <div class="container">
+        <!-- 新增中间层 -->
+        <div class="middle-image" id="letter"></div>
+
+        <div class="content-image" id="envelope"></div>
+        <div class="music-btn" id="musicButton">
+          <img src="./picture/button/music.gif" alt="音乐按钮" id="musicIcon">
+        </div>
+        <div class="hint-text" id="hintText">点击信封进行查阅</div>
+        <!-- 新增继续按钮 -->
+        <div class="continue-btn" id="continueBtn">点击继续</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 获取音频元素
+    const bgMusic = document.getElementById('bg-music');
+    const musicIcon = document.getElementById('musicIcon');
+
+    // 页面加载时恢复音乐状态
+    window.addEventListener('load', function() {
+      const savedMusicState = localStorage.getItem('musicPlaying');
+      const savedMusicTime = localStorage.getItem('musicCurrentTime');
+
+      if (savedMusicState === 'true') {
+        musicIcon.src = './picture/button/music.gif';
+        // 延迟播放以确保音频元素已准备好
+        setTimeout(() => {
+          if (savedMusicTime) {
+            const time = parseFloat(savedMusicTime);
+            if (!isNaN(time) && time >= 0) {
+              bgMusic.currentTime = time;
+            }
+          }
+          bgMusic.play().catch(function(error) {
+            console.log('Audio play failed:', error);
+          });
+        }, 100);
+      } else {
+        musicIcon.src = './picture/button/no_music.gif';
+      }
+    });
+
+    // 音乐按钮切换功能
+    document.getElementById('musicButton').addEventListener('click', function (event) {
+      event.stopPropagation(); // 阻止事件冒泡，避免触发信封动画
+
+      const isPlaying = !bgMusic.paused;
+
+      if (isPlaying) {
+        // 当前正在播放，暂停音乐
+        bgMusic.pause();
+        musicIcon.src = './picture/button/no_music.gif';
+        localStorage.setItem('musicPlaying', 'false');
+      } else {
+        // 当前暂停，播放音乐
+        bgMusic.play().catch(function(error) {
+          console.log('Audio play failed:', error);
+        });
+        musicIcon.src = './picture/button/music.gif';
+        localStorage.setItem('musicPlaying', 'true');
+      }
+    });
+
+    // 点击信封动画效果
+    let isAnimating = false; // 防止重复点击
+    let animationFinished = false; // 标记动画是否完成
+
+    document.getElementById('envelope').addEventListener('click', function () {
+      if (isAnimating) return; // 如果正在动画中，则返回
+      isAnimating = true;
+
+      const hintText = document.getElementById('hintText');
+      const envelope = document.getElementById('envelope');
+      const letter = document.getElementById('letter');
+      const continueBtn = document.getElementById('continueBtn');
+
+      // 1. 文字淡出
+      hintText.classList.add('hidden');
+
+      // 2. 信封下移并缩小
+      envelope.classList.add('animate');
+
+      // 3. 信纸先稍稍上移再下移至居中并变大
+      setTimeout(() => {
+        // 第一阶段：先稍稍上移
+        letter.classList.add('animate-phase1');
+
+        setTimeout(() => {
+          // 第二阶段：移除第一阶段类，添加最终动画类
+          letter.classList.remove('animate-phase1');
+          letter.classList.add('animate');
+
+          // 动画完成后显示"点击继续"按钮
+          setTimeout(() => {
+            animationFinished = true;
+            continueBtn.classList.add('show');
+          }, 1000); // 等待1秒动画完成
+        }, 300); // 第一阶段持续0.3秒
+      }, 100); // 延迟100ms开始信纸动画
+    });
+
+    // 继续按钮点击事件
+    document.getElementById('continueBtn').addEventListener('click', function (event) {
+      event.stopPropagation(); // 阻止事件冒泡
+      if (animationFinished) {
+        // 跳转前保存音乐状态
+        const isPlaying = !bgMusic.paused;
+        localStorage.setItem('musicPlaying', isPlaying ? 'true' : 'false');
+        localStorage.setItem('musicCurrentTime', bgMusic.currentTime.toFixed(3));
+
+        window.location.href = '4.html';
+      }
+    });
+
+    // 动画完成后，点击屏幕任意位置也可以跳转（除了音乐按钮）
+    document.querySelector('.container').addEventListener('click', function (event) {
+      // 如果动画未完成，不执行跳转
+      if (!animationFinished) return;
+
+      // 如果点击的是音乐按钮，不执行跳转
+      if (event.target.closest('#musicButton')) return;
+
+      // 如果点击的是继续按钮，不执行跳转（继续按钮有自己的事件处理）
+      if (event.target.closest('#continueBtn')) return;
+
+      // 跳转前保存音乐状态
+      const isPlaying = !bgMusic.paused;
+      localStorage.setItem('musicPlaying', isPlaying ? 'true' : 'false');
+      localStorage.setItem('musicCurrentTime', bgMusic.currentTime.toFixed(3));
+
+      // 执行跳转
+      window.location.href = '4.html';
+    });
+  </script>
+</body>
+
+</html>
