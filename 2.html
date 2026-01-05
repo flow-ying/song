@@ -204,8 +204,8 @@
         </div>
 
         <div class="content">
-          <div class="image-container">
-            <img src="./picture/2/2.gif" alt="内容图片">
+          <div class="image-container" id="imageContainer" style="opacity: 0;">
+            <img src="./picture/2/IMG_2911.GIF" alt="内容图片">
           </div>
 
           <div class="progress-container">
@@ -274,8 +274,16 @@
     // 模拟加载进度
     let progress = 0;
     const progressFull = document.getElementById('progressFull');
+    const imageContainer = document.getElementById('imageContainer');
+    const gifImage = imageContainer.querySelector('img');
+
+    // 开始时显示动图，让它和进度条同步播放
+    imageContainer.style.transition = 'opacity 0.5s ease';
+    imageContainer.style.opacity = '1';
+
     const loadingInterval = setInterval(() => {
-      progress += Math.random() * 10;
+      // 加快进度条速度，每次增加15-25的随机值
+      progress += 4 + Math.random() * 5;
       if (progress >= 100) {
         progress = 100;
         clearInterval(loadingInterval);
@@ -290,7 +298,7 @@
         }, 500); // 延迟500毫秒，让用户看到100%的进度条
       }
       progressFull.style.width = progress + '%';
-    }, 300);
+    }, 200); // 缩短间隔时间从300ms到200ms
   </script>
 </body>
 
